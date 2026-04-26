@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """
-Daily Horoscope Generator using SambaNova's GPT-OSS-120B model.
-Stays under 300 token limit per horoscope, uses yesterday's data as fallback.
+Detailed multi‑category daily horoscope generator using SambaNova API.
+Calls the model once per category per rashi, then combines into one JSON.
 """
 
 import json
 import os
+import time
 from datetime import datetime
+
+from sambanova import SambaNova
 
 # ---------- CONFIGURATION ----------
 RASHIS = [
@@ -16,64 +19,88 @@ RASHIS = [
     "Makara (Capricorn)", "Kumbha (Aquarius)", "Meena (Pisces)"
 ]
 
-# SambaNova API configuration (using OpenAI-compatible client)
-from sambanova import SambaNova
-API_KEY = os.environ["SAMBANOVA_API_KEY"]  # Set in GitHub Actions secret
+CATEGORIES = [
+    "general", "luck", "scope", "study", "love", "travel",
+    "lucky_number", "lucky_color"
+]
+
+# Category‑specific instructions added to the base prompt
+CATEGORY_PROMPTS = {
+    "general": "Provide a deep, detailed general prediction for today.",
+    "luck": "Analyse the luck factor for today in detail. What are the hidden opportunities?",
+    "scope": "Give an in‑depth scope covering all major life areas for today.",
+    "study": "Offer a comprehensive forecast for students and those pursuing knowledge today.",
+    "love": "Provide a thorough analysis of romantic and relationship aspects for today.",
+    "travel": "Detail any travel‑related influences and advice for today.",
+    "lucky_number": "Return ONLY a single lucky number (1‑100) for today. Do not include any other text.",
+    "lucky_color": "Return ONLY the name of one lucky colour for today (e.g., Red). No other text."
+}
+
+API_KEY = os.environ["SAMBANOVA_API_KEY"]
 BASE_URL = "https://api.sambanova.ai/v1"
+client = SambaNova(api_key=API_KEY, base_url=BASE_URL)
 
-client = SambaNova(
-    api_key=API_KEY,
-    base_url=BASE_URL,
-)
+MAX_OUTPUT_TOKENS = 350   # Enough for deep text, but still safe
+DELAY_BETWEEN_CALLS = 1.0 # seconds – stays well within 60 RPM limit
 
-# Token limit (strictly 300 tokens, tune prompt accordingly)
-MAX_OUTPUT_TOKENS = 300
+# ---------- GENERATION FUNCTIONS ----------
 
-# ---------- HOROSCOPE GENERATION ----------
-
-def generate_horoscope(rashi, today_str):
-    """Generate a single horoscope using SambaNova API. Returns text or None on failure."""
-    prompt = (
-        f"<|category|> general <|horoscope|> "
-        f"Generate a detailed Vedic daily horoscope for {rashi}. "
-        f"Today is {today_str}. Include predictions for career, love, "
-        f"health, and a lucky tip. Keep it concise and under 300 tokens."
+def generate_category(rashi, category, today_str):
+    """Generate content for one category of one rashi."""
+    base_instruction = CATEGORY_PROMPTS[category]
+    system_msg = (
+        "You are a seasoned Vedic astrologer. "
+        "Always answer in plain text, no markdown. "
+        "Be specific, positive, and detailed."
+    )
+    user_prompt = (
+        f"Rashi: {rashi}\nToday: {today_str}\nCategory: {category}\n"
+        f"{base_instruction}"
     )
     try:
         response = client.chat.completions.create(
             model="gpt-oss-120b",
             messages=[
-                {"role": "system", "content": "You are a skilled Vedic astrologer. Always respond in plain text, no markdown."},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_prompt}
             ],
             temperature=0.8,
             top_p=0.9,
             max_tokens=MAX_OUTPUT_TOKENS
         )
-        # The response object contains choices, we extract the content
-        horoscope = response.choices[0].message.content.strip()
-        return horoscope
+        content = response.choices[0].message.content.strip()
+        # For lucky_number, try to parse an integer
+        if category == "lucky_number":
+            import re
+            numbers = re.findall(r'\b\d+\b', content)
+            if numbers:
+                return int(numbers[0])
+            else:
+                return None  # fallback
+        # For lucky_color, just take the first word (or as returned)
+        if category == "lucky_color":
+            # Keep only first word if multiple
+            return content.split()[0].capitalize()
+        return content
     except Exception as e:
-        print(f"SambaNova API error for {rashi}: {e}")
+        print(f"Error generating {category} for {rashi}: {e}")
         return None
 
 def load_previous_horoscopes():
-    """Load yesterday's horoscopes (or hardcoded fallback)."""
-    # 1. Try today's file (if exists)
+    """Load yesterday's full data (or fallback)."""
     try:
         with open("data/horoscopes.json", "r", encoding="utf-8") as f:
             data = json.load(f)
             return data.get("rashi_horoscopes", {})
     except Exception:
         pass
-    # 2. Hardcoded fallback
     try:
         with open("data/fallback_horoscopes.json", "r", encoding="utf-8") as f:
             return json.load(f).get("rashi_horoscopes", {})
     except Exception:
         pass
-    # 3. Absolute last resort
-    return {r: f"Horoscope for {r} is being updated." for r in RASHIS}
+    # Empty fallback
+    return {r: {} for r in RASHIS}
 
 # ---------- MAIN ----------
 
@@ -81,11 +108,11 @@ def main():
     today_str = datetime.now().strftime("%B %d, %Y")
     today_iso = datetime.now().isoformat()
 
-    # Skip if today's horoscopes already exist
+    # Avoid redundant generation
     try:
         with open("data/horoscopes.json", "r", encoding="utf-8") as f:
             if json.load(f).get("date", "").startswith(today_iso[:10]):
-                print("Today's horoscopes already generated. Exiting.")
+                print("Today's data already generated. Exiting.")
                 return
     except FileNotFoundError:
         pass
@@ -94,23 +121,26 @@ def main():
     previous_data = load_previous_horoscopes()
 
     for rashi in RASHIS:
-        print(f"Generating for {rashi}...")
-        horoscope = generate_horoscope(rashi, today_str)
-        
-        # Quality check: ensure response is not empty and has reasonable length
-        if horoscope and len(horoscope) > 50:
-            output["rashi_horoscopes"][rashi] = horoscope
-        else:
-            # Fallback to previous day
-            print(f"Failed to generate for {rashi}, using previous horoscope.")
-            output["rashi_horoscopes"][rashi] = previous_data.get(
-                rashi, f"Horoscope for {rashi} is being updated. Check back soon."
-            )
+        print(f"\n===== {rashi} =====")
+        rashi_data = {}
+        for category in CATEGORIES:
+            print(f"  {category}...", end=" ", flush=True)
+            result = generate_category(rashi, category, today_str)
+            if result is not None and (category not in ["lucky_number", "lucky_color"] or result):
+                rashi_data[category] = result
+                print("✓")
+            else:
+                # Fallback: try to reuse yesterday's value for this rashi/category
+                prev_rashi = previous_data.get(rashi, {})
+                fallback_val = prev_rashi.get(category, "Information not available")
+                rashi_data[category] = fallback_val
+                print(f"✗ (used fallback)")
+            time.sleep(DELAY_BETWEEN_CALLS)  # polite rate limiting
+        output["rashi_horoscopes"][rashi] = rashi_data
 
-    # Write output JSON
     with open("data/horoscopes.json", "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-    print("Horoscope generation complete.")
+    print("\nAll horoscopes generated and saved.")
 
 if __name__ == "__main__":
     main()
