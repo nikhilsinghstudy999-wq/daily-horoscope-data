@@ -94,9 +94,11 @@ def compute_planet_positions(jd):
     """
     positions = {}
     for pid, pname in PLANETS.items():
-        # pyswisseph returns a tuple. With FLG_SIDEREAL | FLG_SPEED we get (lon, speed, ret_flag).
-        result = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL | swe.FLG_SPEED)
-        lon = result[0]          # longitude in degrees (0‑360)
+        # CORRECTED: Unpack the returned tuple properly.
+        # The function returns a tuple where the first element is a list.
+        # The first element of that list (xx[0]) is the longitude.
+        xx, ret_flag = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL | swe.FLG_SPEED)
+        lon = xx[0]          # longitude in degrees (0‑360)
         sign_idx = int(lon // 30)
         degree = round(lon % 30, 2)
         positions[pname] = {
