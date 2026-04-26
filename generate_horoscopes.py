@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
-Daily Horoscope Generator for 12 Vedic Rashis.
-Uses two Hugging Face models with fallback, retries, and quality checks.
-Always writes a valid horoscopes.json, even if AI is completely down.
+Fast local horoscope generation using transformers + optional HF Inference API fallback.
 """
-
-import requests
 import json
 import os
 import time
 from datetime import datetime
+
+from transformers import pipeline, set_seed
 
 # ---------- CONFIGURATION ----------
 RASHIS = [
@@ -19,134 +17,139 @@ RASHIS = [
     "Makara (Capricorn)", "Kumbha (Aquarius)", "Meena (Pisces)"
 ]
 
-# Model endpoints (both free on HF Inference API)
-PRIMARY_MODEL = "shahp7575/gpt2-horoscopes"          # Fast, purpose‑built
-FALLBACK_MODEL = "mistralai/Mistral-7B-Instruct-v0.2" # Slower but reliable
+# HuggingFace Inference API (fallback only)
+HF_TOKEN = os.environ.get("HF_TOKEN")
+PRIMARY_MODEL_URL = "https://api-inference.huggingface.co/models/shahp7575/gpt2-horoscopes"
 
-HF_TOKEN = os.environ["HF_TOKEN"]  # Set in GitHub Actions secret
-HEADERS = {"Authorization": f"Bearer {HF_TOKEN}"}
+MIN_LENGTH = 100
 
-MIN_HOROSCOPE_LENGTH = 100  # Reject if AI returns garbled output
+# ---------- HELPERS ----------
+def generate_locally(model_name, rashi_prompts):
+    """
+    Load the model locally (cached on disk) and generate horoscopes for all rashis.
+    Returns dictionary {rashi: text} or None if loading fails.
+    """
+    print(f"Loading model {model_name} locally...")
+    try:
+        generator = pipeline(
+            "text-generation",
+            model=model_name,
+            tokenizer=model_name,
+            device=-1,           # CPU
+            framework="pt"
+        )
+        # Warm-up dummy call (optional)
+        _ = generator("test", max_new_tokens=5)
+        print("Model loaded. Generating...")
+        results = {}
+        for rashi, prompt in rashi_prompts.items():
+            output = generator(
+                prompt,
+                max_new_tokens=250,
+                temperature=0.8,
+                do_sample=True,
+                pad_token_id=generator.tokenizer.eos_token_id
+            )[0]["generated_text"]
+            # Remove the prompt from the output if it includes it
+            if output.startswith(prompt):
+                horoscope = output[len(prompt):].strip()
+            else:
+                horoscope = output.strip()
+            results[rashi] = horoscope
+        return results
+    except Exception as e:
+        print(f"Local generation failed: {e}")
+        return None
 
-# ---------- HELPER FUNCTIONS ----------
-
-def call_model(api_url, prompt, max_retries=3, timeout=30):
-    """Call a Hugging Face model with exponential backoff."""
+def call_inference_api(prompt, retries=2):
+    """Fallback: call HF Inference API."""
+    if not HF_TOKEN:
+        return None
+    headers = {"Authorization": f"Bearer {HF_TOKEN}", "x-wait-for-model": "true"}
     payload = {
         "inputs": prompt,
         "parameters": {"max_new_tokens": 250, "temperature": 0.8, "return_full_text": False}
     }
-    for attempt in range(1, max_retries + 1):
+    for attempt in range(1, retries + 1):
         try:
-            resp = requests.post(api_url, headers=HEADERS, json=payload, timeout=timeout)
+            resp = requests.post(PRIMARY_MODEL_URL, headers=headers, json=payload, timeout=60)
             if resp.status_code == 200:
                 result = resp.json()
-                # Handle different response shapes
                 if isinstance(result, list) and "generated_text" in result[0]:
                     return result[0]["generated_text"].strip()
-                elif isinstance(result, dict) and "generated_text" in result:
-                    return result["generated_text"].strip()
-            print(f"Attempt {attempt} failed: HTTP {resp.status_code}")
-        except Exception as e:
-            print(f"Attempt {attempt} error: {e}")
-        time.sleep(2 ** attempt)  # 2s, 4s, 8s
+        except Exception:
+            pass
+        time.sleep(5)
     return None
 
 def quality_check(text):
-    """Return True if the horoscope is usable."""
-    if not text or len(text) < MIN_HOROSCOPE_LENGTH:
+    if not text or len(text) < MIN_LENGTH:
         return False
-    bogus_phrases = ["unable to generate", "i cannot", "as an ai", "error"]
-    if any(phrase in text.lower() for phrase in bogus_phrases):
-        return False
-    return True
+    bad = ["unable to generate", "i cannot", "as an ai", "error", "loading"]
+    lower = text.lower()
+    return not any(b in lower for b in bad)
 
 def load_previous_horoscopes():
-    """Try to load horoscopes from yesterday's file (or the ultimate fallback)."""
-    # 1. Current committed file (may be yesterday's)
     try:
         with open("data/horoscopes.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return data.get("rashi_horoscopes", {})
+            return json.load(f).get("rashi_horoscopes", {})
     except Exception:
         pass
-
-    # 2. Hardcoded fallback (always present in repo)
     try:
         with open("data/fallback_horoscopes.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return data.get("rashi_horoscopes", {})
+            return json.load(f).get("rashi_horoscopes", {})
     except Exception:
         pass
-
-    # 3. Absolute last resort – empty strings
-    return {rashi: "Horoscope will be available soon." for rashi in RASHIS}
+    return {r: "Horoscope will be available soon." for r in RASHIS}
 
 # ---------- MAIN ----------
 def main():
     today_str = datetime.now().strftime("%B %d, %Y")
     today_iso = datetime.now().isoformat()
 
-    # Skip if today's horoscopes already exist (to avoid double runs)
+    # Skip if today already done
     try:
         with open("data/horoscopes.json", "r", encoding="utf-8") as f:
-            existing = json.load(f)
-            if existing.get("date", "").startswith(today_iso[:10]):
-                print("Today's horoscopes already generated. Exiting.")
+            if json.load(f).get("date", "").startswith(today_iso[:10]):
+                print("Today's horoscopes already exist. Exiting.")
                 return
     except FileNotFoundError:
         pass
 
-    output = {"date": today_iso, "rashi_horoscopes": {}}
-    previous_data = load_previous_horoscopes()
-
+    # Build prompts for local generation
+    prompts = {}
     for rashi in RASHIS:
-        print(f"Processing {rashi}...")
-        horoscope = None
-
-        # ------- PROMPT TEMPLATES -------
-        prompt_primary = (
+        prompts[rashi] = (
             f"<|category|> general <|horoscope|> "
             f"Generate a detailed Vedic daily horoscope for {rashi}. "
             f"Today is {today_str}. Include predictions for career, love, "
             f"health, and a lucky tip. Keep it 150-200 words."
         )
-        prompt_fallback = (
-            f"[INST] You are a Vedic astrologer. Write a detailed, positive "
-            f"daily horoscope for {rashi} for {today_str}. Cover career, love, "
-            f"health, and a lucky tip. Speak directly to the reader. [/INST]"
-        )
 
-        # 1. Try primary model
-        horoscope = call_model(
-            f"https://api-inference.huggingface.co/models/{PRIMARY_MODEL}",
-            prompt_primary
-        )
-        if quality_check(horoscope):
-            output["rashi_horoscopes"][rashi] = horoscope
-            continue
+    # ---- STEP 1: Try local generation (fast) ----
+    output = {"date": today_iso, "rashi_horoscopes": {}}
+    local_generated = generate_locally("shahp7575/gpt2-horoscopes", prompts)
 
-        # 2. Try fallback model
-        print(f"Primary model failed for {rashi}. Trying fallback...")
-        horoscope = call_model(
-            f"https://api-inference.huggingface.co/models/{FALLBACK_MODEL}",
-            prompt_fallback
-        )
-        if quality_check(horoscope):
-            output["rashi_horoscopes"][rashi] = horoscope
-            continue
+    for rashi in RASHIS:
+        if local_generated and quality_check(local_generated.get(rashi)):
+            output["rashi_horoscopes"][rashi] = local_generated[rashi]
+        else:
+            # ---- STEP 2: Fallback to Inference API ----
+            print(f"Local generation insufficient for {rashi}, trying Inference API...")
+            horoscope = call_inference_api(prompts[rashi])
+            if quality_check(horoscope):
+                output["rashi_horoscopes"][rashi] = horoscope
+            else:
+                # ---- STEP 3: Use previous day ----
+                print(f"Both methods failed for {rashi}, reusing previous horoscope.")
+                previous = load_previous_horoscopes()
+                output["rashi_horoscopes"][rashi] = previous.get(
+                    rashi, f"{rashi} horoscope is being updated. Check back shortly."
+                )
 
-        # 3. Reuse yesterday's (or hardcoded) text
-        print(f"Both models failed for {rashi}. Reusing previous horoscope.")
-        output["rashi_horoscopes"][rashi] = previous_data.get(
-            rashi, f"{rashi} horoscope is being updated. Check back shortly."
-        )
-
-    # Write the final JSON file
     with open("data/horoscopes.json", "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-
-    print("Horoscope generation complete.")
+    print("Done.")
 
 if __name__ == "__main__":
     main()
