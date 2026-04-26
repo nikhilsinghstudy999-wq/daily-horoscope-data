@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Detailed multi‑category daily horoscope generator using SambaNova API.
-Calls the model once per category per rashi, then combines into one JSON.
-Always writes a unique run_timestamp so the file is guaranteed to change.
+Pure daily horoscope generator – no fallback, only fresh SambaNova output.
+Retries each category 3 times, fails loudly if a category can't be generated.
 """
 
 import json
 import os
 import time
+import sys
 from datetime import datetime, timezone
 
 from sambanova import SambaNova
@@ -41,10 +41,12 @@ BASE_URL = "https://api.sambanova.ai/v1"
 client = SambaNova(api_key=API_KEY, base_url=BASE_URL)
 
 MAX_OUTPUT_TOKENS = 350
-DELAY_BETWEEN_CALLS = 1.0  # seconds
+RETRY_COUNT = 3
+RETRY_DELAY = 2  # seconds between retries
 
 # ---------- GENERATION ----------
 def generate_category(rashi, category, today_str):
+    """Call API with retries. Raises exception on total failure."""
     base_instruction = CATEGORY_PROMPTS[category]
     system_msg = (
         "You are a seasoned Vedic astrologer. "
@@ -55,69 +57,64 @@ def generate_category(rashi, category, today_str):
         f"Rashi: {rashi}\nToday: {today_str}\nCategory: {category}\n"
         f"{base_instruction}"
     )
-    try:
-        response = client.chat.completions.create(
-            model="gpt-oss-120b",
-            messages=[
-                {"role": "system", "content": system_msg},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.8,
-            top_p=0.9,
-            max_tokens=MAX_OUTPUT_TOKENS
-        )
-        content = response.choices[0].message.content.strip()
-        if category == "lucky_number":
-            import re
-            numbers = re.findall(r'\b\d+\b', content)
-            return int(numbers[0]) if numbers else None
-        if category == "lucky_color":
-            return content.split()[0].capitalize()
-        return content
-    except Exception as e:
-        print(f"Error generating {category} for {rashi}: {e}")
-        return None
 
-def load_previous_horoscopes():
-    try:
-        with open("data/horoscopes.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return data.get("rashi_horoscopes", {})
-    except Exception:
-        pass
-    try:
-        with open("data/fallback_horoscopes.json", "r", encoding="utf-8") as f:
-            return json.load(f).get("rashi_horoscopes", {})
-    except Exception:
-        pass
-    return {r: {} for r in RASHIS}
+    last_exception = None
+    for attempt in range(1, RETRY_COUNT + 1):
+        try:
+            response = client.chat.completions.create(
+                model="gpt-oss-120b",
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.8,
+                top_p=0.9,
+                max_tokens=MAX_OUTPUT_TOKENS
+            )
+            content = response.choices[0].message.content
+            if content is None:
+                raise ValueError("API returned None content")
+            content = content.strip()
+            if not content:
+                raise ValueError("API returned empty content")
+
+            # For lucky_number, extract integer
+            if category == "lucky_number":
+                import re
+                numbers = re.findall(r'\b\d+\b', content)
+                if not numbers:
+                    raise ValueError(f"No number found in response: {content}")
+                return int(numbers[0])
+
+            # For lucky_color, just first word
+            if category == "lucky_color":
+                return content.split()[0].capitalize()
+
+            return content
+
+        except Exception as e:
+            last_exception = e
+            print(f"  Attempt {attempt}/{RETRY_COUNT} failed: {e}")
+            if attempt < RETRY_COUNT:
+                time.sleep(RETRY_DELAY)
+
+    raise RuntimeError(
+        f"Failed to generate {category} for {rashi} after {RETRY_COUNT} attempts. "
+        f"Last error: {last_exception}"
+    )
 
 # ---------- MAIN ----------
 def main():
     today_str = datetime.now().strftime("%B %d, %Y")
     today_iso = datetime.now().isoformat()
 
-    # Create data directory if missing
     os.makedirs("data", exist_ok=True)
-
-    # Check if today's data already exists (but we still regenerate to update run_timestamp)
-    # If you want to skip entirely, keep this block. I'll leave it but note the run_timestamp
-    # will change anyway – a new run always creates a new timestamp.
-    # Uncomment the block below if you want to avoid duplicate calls during the same day.
-    # try:
-    #     with open("data/horoscopes.json", "r", encoding="utf-8") as f:
-    #         if json.load(f).get("date", "").startswith(today_iso[:10]):
-    #             print("Today's data already generated. Exiting.")
-    #             return
-    # except FileNotFoundError:
-    #     pass
 
     output = {
         "date": today_iso,
         "run_timestamp": datetime.now(timezone.utc).isoformat(),
         "rashi_horoscopes": {}
     }
-    previous_data = load_previous_horoscopes()
 
     for rashi in RASHIS:
         print(f"\n===== {rashi} =====")
@@ -125,20 +122,14 @@ def main():
         for category in CATEGORIES:
             print(f"  {category}...", end=" ", flush=True)
             result = generate_category(rashi, category, today_str)
-            if result is not None and (category not in ["lucky_number", "lucky_color"] or result):
-                rashi_data[category] = result
-                print("✓")
-            else:
-                prev_rashi = previous_data.get(rashi, {})
-                fallback_val = prev_rashi.get(category, "Information not available")
-                rashi_data[category] = fallback_val
-                print(f"✗ (used fallback)")
-            time.sleep(DELAY_BETWEEN_CALLS)
+            rashi_data[category] = result
+            print("✓")
         output["rashi_horoscopes"][rashi] = rashi_data
 
+    # Write only after full success
     with open("data/horoscopes.json", "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-    print("\nAll horoscopes generated and saved.")
+    print("\n✅ All horoscopes generated and saved successfully.")
 
 if __name__ == "__main__":
     main()
