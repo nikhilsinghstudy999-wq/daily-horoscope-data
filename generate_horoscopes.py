@@ -2,12 +2,13 @@
 """
 Detailed multi‑category daily horoscope generator using SambaNova API.
 Calls the model once per category per rashi, then combines into one JSON.
+Always writes a unique run_timestamp so the file is guaranteed to change.
 """
 
 import json
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sambanova import SambaNova
 
@@ -24,7 +25,6 @@ CATEGORIES = [
     "lucky_number", "lucky_color"
 ]
 
-# Category‑specific instructions added to the base prompt
 CATEGORY_PROMPTS = {
     "general": "Provide a deep, detailed general prediction for today.",
     "luck": "Analyse the luck factor for today in detail. What are the hidden opportunities?",
@@ -40,13 +40,11 @@ API_KEY = os.environ["SAMBANOVA_API_KEY"]
 BASE_URL = "https://api.sambanova.ai/v1"
 client = SambaNova(api_key=API_KEY, base_url=BASE_URL)
 
-MAX_OUTPUT_TOKENS = 350   # Enough for deep text, but still safe
-DELAY_BETWEEN_CALLS = 1.0 # seconds – stays well within 60 RPM limit
+MAX_OUTPUT_TOKENS = 350
+DELAY_BETWEEN_CALLS = 1.0  # seconds
 
-# ---------- GENERATION FUNCTIONS ----------
-
+# ---------- GENERATION ----------
 def generate_category(rashi, category, today_str):
-    """Generate content for one category of one rashi."""
     base_instruction = CATEGORY_PROMPTS[category]
     system_msg = (
         "You are a seasoned Vedic astrologer. "
@@ -69,17 +67,11 @@ def generate_category(rashi, category, today_str):
             max_tokens=MAX_OUTPUT_TOKENS
         )
         content = response.choices[0].message.content.strip()
-        # For lucky_number, try to parse an integer
         if category == "lucky_number":
             import re
             numbers = re.findall(r'\b\d+\b', content)
-            if numbers:
-                return int(numbers[0])
-            else:
-                return None  # fallback
-        # For lucky_color, just take the first word (or as returned)
+            return int(numbers[0]) if numbers else None
         if category == "lucky_color":
-            # Keep only first word if multiple
             return content.split()[0].capitalize()
         return content
     except Exception as e:
@@ -87,7 +79,6 @@ def generate_category(rashi, category, today_str):
         return None
 
 def load_previous_horoscopes():
-    """Load yesterday's full data (or fallback)."""
     try:
         with open("data/horoscopes.json", "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -99,25 +90,33 @@ def load_previous_horoscopes():
             return json.load(f).get("rashi_horoscopes", {})
     except Exception:
         pass
-    # Empty fallback
     return {r: {} for r in RASHIS}
 
 # ---------- MAIN ----------
-
 def main():
     today_str = datetime.now().strftime("%B %d, %Y")
     today_iso = datetime.now().isoformat()
 
-    # Avoid redundant generation
-    try:
-        with open("data/horoscopes.json", "r", encoding="utf-8") as f:
-            if json.load(f).get("date", "").startswith(today_iso[:10]):
-                print("Today's data already generated. Exiting.")
-                return
-    except FileNotFoundError:
-        pass
+    # Create data directory if missing
+    os.makedirs("data", exist_ok=True)
 
-    output = {"date": today_iso, "rashi_horoscopes": {}}
+    # Check if today's data already exists (but we still regenerate to update run_timestamp)
+    # If you want to skip entirely, keep this block. I'll leave it but note the run_timestamp
+    # will change anyway – a new run always creates a new timestamp.
+    # Uncomment the block below if you want to avoid duplicate calls during the same day.
+    # try:
+    #     with open("data/horoscopes.json", "r", encoding="utf-8") as f:
+    #         if json.load(f).get("date", "").startswith(today_iso[:10]):
+    #             print("Today's data already generated. Exiting.")
+    #             return
+    # except FileNotFoundError:
+    #     pass
+
+    output = {
+        "date": today_iso,
+        "run_timestamp": datetime.now(timezone.utc).isoformat(),
+        "rashi_horoscopes": {}
+    }
     previous_data = load_previous_horoscopes()
 
     for rashi in RASHIS:
@@ -130,12 +129,11 @@ def main():
                 rashi_data[category] = result
                 print("✓")
             else:
-                # Fallback: try to reuse yesterday's value for this rashi/category
                 prev_rashi = previous_data.get(rashi, {})
                 fallback_val = prev_rashi.get(category, "Information not available")
                 rashi_data[category] = fallback_val
                 print(f"✗ (used fallback)")
-            time.sleep(DELAY_BETWEEN_CALLS)  # polite rate limiting
+            time.sleep(DELAY_BETWEEN_CALLS)
         output["rashi_horoscopes"][rashi] = rashi_data
 
     with open("data/horoscopes.json", "w", encoding="utf-8") as f:
