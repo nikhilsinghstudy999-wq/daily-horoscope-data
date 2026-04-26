@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Pure daily horoscope generator – no fallback, only fresh SambaNova output.
-Retries each category 3 times, fails loudly if a category can't be generated.
+Single‑prompt multi‑category daily horoscope generator.
+Each rashi gets all 8 categories in one API call – returns structured JSON.
 """
 
 import json
@@ -20,87 +20,87 @@ RASHIS = [
     "Makara (Capricorn)", "Kumbha (Aquarius)", "Meena (Pisces)"
 ]
 
-CATEGORIES = [
-    "general", "luck", "scope", "study", "love", "travel",
-    "lucky_number", "lucky_color"
-]
-
-CATEGORY_PROMPTS = {
-    "general": "Provide a deep, detailed general prediction for today.",
-    "luck": "Analyse the luck factor for today in detail. What are the hidden opportunities?",
-    "scope": "Give an in‑depth scope covering all major life areas for today.",
-    "study": "Offer a comprehensive forecast for students and those pursuing knowledge today.",
-    "love": "Provide a thorough analysis of romantic and relationship aspects for today.",
-    "travel": "Detail any travel‑related influences and advice for today.",
-    "lucky_number": "Return ONLY a single lucky number (1‑100) for today. Do not include any other text.",
-    "lucky_color": "Return ONLY the name of one lucky colour for today (e.g., Red). No other text."
-}
-
 API_KEY = os.environ["SAMBANOVA_API_KEY"]
 BASE_URL = "https://api.sambanova.ai/v1"
 client = SambaNova(api_key=API_KEY, base_url=BASE_URL)
 
-MAX_OUTPUT_TOKENS = 350
+MAX_OUTPUT_TOKENS = 1200      # enough for 8 detailed sections
+TEMPERATURE = 0.8
+TOP_P = 0.9
 RETRY_COUNT = 3
-RETRY_DELAY = 2  # seconds between retries
+RETRY_DELAY = 3  # seconds
+
+SYSTEM_PROMPT = (
+    "You are a seasoned Vedic astrologer. "
+    "Always respond with exactly the JSON structure requested. "
+    "No markdown, no extra text, no explanations outside the JSON. "
+    "The JSON keys are: general, luck, scope, study, love, travel, lucky_number, lucky_color. "
+    "All values must be strings, except lucky_number which must be an integer. "
+    "Make each value detailed (2-4 sentences) and specific to today."
+)
 
 # ---------- GENERATION ----------
-def generate_category(rashi, category, today_str):
-    """Call API with retries. Raises exception on total failure."""
-    base_instruction = CATEGORY_PROMPTS[category]
-    system_msg = (
-        "You are a seasoned Vedic astrologer. "
-        "Always answer in plain text, no markdown. "
-        "Be specific, positive, and detailed."
-    )
+def generate_rashi(rashi, today_str):
+    """Generate all categories for one rashi in a single API call. Returns dict."""
     user_prompt = (
-        f"Rashi: {rashi}\nToday: {today_str}\nCategory: {category}\n"
-        f"{base_instruction}"
+        f"Rashi: {rashi}\nToday: {today_str}\n"
+        f"Return a JSON object (no markdown) with the following keys:\n"
+        f"general (detailed prediction), luck (luck factor), scope (life areas), "
+        f"study (students), love (relationships), travel (advice), "
+        f"lucky_number (integer between 1-100), lucky_color (one color name)."
     )
 
-    last_exception = None
+    last_error = None
     for attempt in range(1, RETRY_COUNT + 1):
         try:
             response = client.chat.completions.create(
                 model="gpt-oss-120b",
                 messages=[
-                    {"role": "system", "content": system_msg},
+                    {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt}
                 ],
-                temperature=0.8,
-                top_p=0.9,
+                temperature=TEMPERATURE,
+                top_p=TOP_P,
                 max_tokens=MAX_OUTPUT_TOKENS
             )
             content = response.choices[0].message.content
-            if content is None:
-                raise ValueError("API returned None content")
-            content = content.strip()
             if not content:
-                raise ValueError("API returned empty content")
+                raise ValueError("Empty response content")
 
-            # For lucky_number, extract integer
-            if category == "lucky_number":
+            # Parse JSON – first try direct parse
+            try:
+                data = json.loads(content.strip())
+            except json.JSONDecodeError:
+                # If model wrapped JSON in markdown or added extra text, try to extract
                 import re
-                numbers = re.findall(r'\b\d+\b', content)
-                if not numbers:
-                    raise ValueError(f"No number found in response: {content}")
-                return int(numbers[0])
+                json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                if json_match:
+                    data = json.loads(json_match.group())
+                else:
+                    raise ValueError(f"Could not parse JSON from: {content[:200]}...")
 
-            # For lucky_color, just first word
-            if category == "lucky_color":
-                return content.split()[0].capitalize()
+            # Validate required keys
+            required_keys = {"general", "luck", "scope", "study", "love", "travel", "lucky_number", "lucky_color"}
+            if not all(k in data for k in required_keys):
+                raise ValueError(f"Missing keys in JSON: {data.keys()}")
 
-            return content
+            # Ensure types
+            data["lucky_number"] = int(data["lucky_number"])
+            data["lucky_color"] = str(data["lucky_color"])
+            for key in ["general", "luck", "scope", "study", "love", "travel"]:
+                data[key] = str(data[key])
+
+            return data
 
         except Exception as e:
-            last_exception = e
+            last_error = e
             print(f"  Attempt {attempt}/{RETRY_COUNT} failed: {e}")
             if attempt < RETRY_COUNT:
                 time.sleep(RETRY_DELAY)
 
     raise RuntimeError(
-        f"Failed to generate {category} for {rashi} after {RETRY_COUNT} attempts. "
-        f"Last error: {last_exception}"
+        f"Failed to generate horoscope for {rashi} after {RETRY_COUNT} attempts. "
+        f"Last error: {last_error}"
     )
 
 # ---------- MAIN ----------
@@ -118,18 +118,13 @@ def main():
 
     for rashi in RASHIS:
         print(f"\n===== {rashi} =====")
-        rashi_data = {}
-        for category in CATEGORIES:
-            print(f"  {category}...", end=" ", flush=True)
-            result = generate_category(rashi, category, today_str)
-            rashi_data[category] = result
-            print("✓")
-        output["rashi_horoscopes"][rashi] = rashi_data
+        data = generate_rashi(rashi, today_str)
+        output["rashi_horoscopes"][rashi] = data
+        print("✓ All categories generated")
 
-    # Write only after full success
     with open("data/horoscopes.json", "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-    print("\n✅ All horoscopes generated and saved successfully.")
+    print("\n✅ All 12 rashis generated and saved successfully.")
 
 if __name__ == "__main__":
     main()
