@@ -1,21 +1,26 @@
+# .github/workflows/daily-horoscope.yml
 name: "Daily Horoscope Generation (SambaNova)"
 
 on:
   schedule:
-    - cron: '30 0 * * *'   # 06:00 IST
-    - cron: '30 12 * * *'  # 18:00 IST
-  workflow_dispatch:
+    # Two runs to ensure the day’s data is always generated,
+    # even if the first run is delayed or fails.
+    # Times are UTC: 00:30 = 6:00 AM IST, 12:30 = 6:00 PM IST
+    - cron: '30 0 * * *'
+    - cron: '30 12 * * *'
+  workflow_dispatch:   # Manual trigger for testing / emergency
 
 concurrency:
-  group: horoscope-generation
+  group: horoscope-gen
+  # Queue subsequent runs instead of cancelling – guarantees each finishes
   cancel-in-progress: false
 
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15          # Kill if stuck
     permissions:
-      contents: write
+      contents: write            # Needed to push updated JSON
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,6 +30,14 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
@@ -33,10 +46,23 @@ jobs:
           SAMBANOVA_API_KEY: ${{ secrets.SAMBANOVA_API_KEY }}
         run: python generate_horoscopes.py
 
+      - name: Validate generated JSON
+        run: |
+          python -c "
+          import json
+          with open('data/horoscopes.json', 'r') as f:
+              data = json.load(f)
+          required = ['date','run_timestamp','rashi_horoscopes']
+          assert all(k in data for k in required), 'Missing top-level keys'
+          assert len(data['rashi_horoscopes']) == 12, 'Not all 12 rashis present'
+          print('JSON validation passed')
+          "
+
       - name: Commit and push updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/horoscopes.json
+          # Only commit if something changed (handy even if run_timestamp ensures change)
           git diff --staged --quiet || git commit -m "Update daily horoscopes $(date +%Y-%m-%d)"
           git push
