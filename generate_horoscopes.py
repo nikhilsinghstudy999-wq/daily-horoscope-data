@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-Production-grade, self-healing daily horoscope generator.
-Uses Moshier built-in ephemeris (+ Lahiri ayanamsa) + SambaNova LLM.
-Features a multi-stage JSON repair pipeline to handle any LLM output.
+Production‑grade daily horoscope generator with:
+- Same astronomical core (Moshier ephemeris + Lahiri ayanamsa)
+- Rate‑limit‑aware retry
+- Multi‑stage JSON repair that handles any truncation
+- Compact prompt to stay well within token limits
 """
 
 import json
@@ -17,18 +19,13 @@ import swisseph as swe
 from sambanova import SambaNova
 
 # ──────────────────────────────────────────────
-# 0. EPHEMERIS SETUP (BUILT-IN MOSHIER)
+# 0. EPHEMERIS
 # ──────────────────────────────────────────────
 def setup_ephemeris():
-    """
-    Initialize Swiss Ephemeris using Moshier built-in ephemeris.
-    Requires NO external files. Sidereal positions are set with Lahiri ayanamsa.
-    Returns the temporary directory path used for configuration.
-    """
     ephe_dir = tempfile.mkdtemp(prefix="sweph_")
     swe.set_ephe_path(ephe_dir)
     swe.set_sid_mode(swe.SIDM_LAHIRI)
-    print(f"Ephemeris initialised (Moshier built-in, path={ephe_dir})")
+    print(f"Ephemeris: Moshier, Lahiri ayanamsa (path={ephe_dir})")
     return ephe_dir
 
 # ──────────────────────────────────────────────
@@ -62,33 +59,36 @@ PLANETS = {
 # ──────────────────────────────────────────────
 SAMBANOVA_API_KEY = os.environ.get("SAMBANOVA_API_KEY")
 if not SAMBANOVA_API_KEY:
-    print("ERROR: SAMBANOVA_API_KEY environment variable is not set.")
+    print("ERROR: Missing SAMBANOVA_API_KEY env var")
     sys.exit(1)
 
 client = SambaNova(api_key=SAMBANOVA_API_KEY, base_url="https://api.sambanova.ai/v1")
 
-MODEL_NAME = "gpt-oss-120b"
-MAX_OUTPUT_TOKENS = 1200
+MODEL = "gpt-oss-120b"
+MAX_TOKENS = 600            # much smaller → the model can’t exceed it and truncate
 TEMPERATURE = 0.8
 TOP_P = 0.9
-RETRY_COUNT = 3
-RETRY_DELAY = 3  # seconds
+REQUEST_DELAY = 10          # seconds between consecutive calls (avoids 429)
 
+# Retry settings
+MAX_RETRIES = 5
+BASE_RETRY_DELAY = 5        # seconds (increases after 429)
+
+# System prompt that forces brevity and valid JSON
 SYSTEM_PROMPT = (
-    "You are a seasoned Vedic astrologer. "
-    "You must respond with a single, raw JSON object. "
-    "Do not use markdown formatting, line breaks, or extra text. "
-    "The JSON must contain exactly these keys: general, luck, scope, study, love, travel, lucky_number, lucky_color. "
-    "All values must be strings, except lucky_number which must be an integer. "
-    "Make each text value 2-4 detailed sentences grounded in the given transits. "
-    "Ensure the JSON is complete and not truncated."
+    "You are a Vedic astrologer. Reply with a single, compact JSON object, no markdown. "
+    "Keys: general, luck, scope, study, love, travel, lucky_number, lucky_color. "
+    "All values strings except lucky_number (integer). "
+    "Make each text value exactly 1‑2 short, specific sentences grounded in the given transits. "
+    "Do not repeat the transit data – just interpret it. "
+    "Keep the entire response under 500 tokens. "
+    "Ensure the JSON is complete and correctly closed."
 )
 
 # ──────────────────────────────────────────────
-# 3. ASTRONOMICAL CALCULATIONS
+# 3. ASTRONOMICAL CALCULATIONS (unchanged)
 # ──────────────────────────────────────────────
 def compute_planet_positions(jd):
-    """Calculate sidereal (Lahiri) longitudes for all planets at a given Julian day."""
     positions = {}
     for pid, pname in PLANETS.items():
         xx, ret_flag = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL | swe.FLG_SPEED)
@@ -111,7 +111,6 @@ def compute_planet_positions(jd):
     return positions
 
 def build_transit_text(rashi_idx, positions):
-    """Format planet positions into a compact 'house placement' summary string."""
     parts = []
     for pname, data in positions.items():
         house = (data["sign_idx"] - rashi_idx) % 12 + 1
@@ -119,162 +118,149 @@ def build_transit_text(rashi_idx, positions):
     return " | ".join(parts)
 
 # ──────────────────────────────────────────────
-# 4. ROBUST JSON PARSER (THE "SELF-HEALING" PART)
+# 4. SELF‑HEALING JSON PARSER
 # ──────────────────────────────────────────────
-def parse_and_validate_json(content):
-    """
-    Multi-stage JSON parsing designed for messy LLM output.
-    Returns a parsed dictionary if successful, raises ValueError otherwise.
-    """
+def parse_json(content):
+    """Multi‑layer JSON repair that can handle truncated strings."""
     if not content:
-        raise ValueError("Response content is empty.")
+        raise ValueError("Empty content")
 
-    # Stage 1: Direct parse (ideal case)
+    # Strip markdown fences
+    content = re.sub(r'^```(?:json)?\s*', '', content.strip())
+    content = re.sub(r'\s*```$', '', content)
+
+    # Try direct parse
     try:
-        return json.loads(content.strip())
-    except json.JSONDecodeError:
+        return json.loads(content)
+    except:
         pass
 
-    # Stage 2: Extract JSON object using regex (handles leading/trailing text)
+    # Try regex extract
     try:
         match = re.search(r'\{.*\}', content, re.DOTALL)
         if match:
             return json.loads(match.group())
-    except json.JSONDecodeError:
+    except:
         pass
 
-    # Stage 3: Repair common structural issues (unbalanced braces, missing commas, quotes)
+    # Try basic repair (add missing closing braces only if the last char isn't a string fragment)
     try:
-        repaired = repair_json_string(content)
+        repaired = repair_json(content)
         return json.loads(repaired)
-    except (json.JSONDecodeError, ValueError):
+    except:
         pass
 
-    # Stage 4: Aggressive repair + truncation fix (for truncated JSON)
+    # Last resort: try to close the JSON by truncating the damaged string value
     try:
-        repaired = repair_truncated_json(content)
-        return json.loads(repaired)
-    except (json.JSONDecodeError, ValueError):
+        closed = force_close_json(content)
+        return json.loads(closed)
+    except:
         pass
 
-    # Stage 5: Absolute last resort - try to complete the object by adding missing '}'
-    try:
-        cleaned_content = content.strip().rstrip(',')
-        if cleaned_content.endswith('"') or cleaned_content.endswith(']'):
-            cleaned_content += '}'
-        return json.loads(cleaned_content)
-    except json.JSONDecodeError:
-        pass
+    raise ValueError(f"Cannot parse JSON. First 200 chars: {content[:200]}")
 
-    raise ValueError(f"No JSON object found in response. First 200 chars: {content[:200]}")
-
-def repair_json_string(json_str):
-    """Fix common JSON formatting errors: unbalanced braces, missing commas, quotes."""
-    # Remove any leading/trailing whitespace and markdown fences
-    json_str = json_str.strip()
-    json_str = re.sub(r'^```(?:json)?\s*', '', json_str)
-    json_str = re.sub(r'\s*```$', '', json_str)
-
-    # Count braces
+def repair_json(json_str):
+    """Add missing closing braces and fix minor syntax errors."""
     open_braces = json_str.count('{')
     close_braces = json_str.count('}')
-    
-    # Add missing closing braces if the string is truncated
     if open_braces > close_braces:
         json_str += '}' * (open_braces - close_braces)
-    # Remove extra closing braces
-    elif close_braces > open_braces:
-        json_str = json_str[::-1].replace('}', '', close_braces - open_braces)[::-1]
-
-    # Fix missing commas between key-value pairs (common LLM mistake)
-    json_str = re.sub(r'"\s*\n\s*"', '",\n"', json_str)
-    # Replace single quotes with double quotes
+    # Replace single quotes with double quotes inside strings (naive)
     json_str = re.sub(r"(?<!\\)'", '"', json_str)
-    
     return json_str
 
-def repair_truncated_json(json_str):
-    """Handle severely truncated JSON by smartly closing all structures."""
-    json_str = json_str.strip()
-    stack = []
-    in_string = False
-    escape_next = False
-    
-    for char in json_str:
-        if escape_next:
-            escape_next = False
+def force_close_json(json_str):
+    """
+    Handle truncated output where a string value is missing its closing quote.
+    The strategy: find the last key‑value pair that is complete, then close the JSON.
+    """
+    # Pattern: "key":"value" where the value may be cut off.
+    # We'll search for the last complete key‑value pair (ending with a comma or brace).
+    # For truncated strings we try to append '"}'
+    # First attempt: if the string ends with a partial value, remove the broken part.
+    try:
+        # Assume we have something like "general":"Sun in your first house... where Venus shines in the fi"
+        # We can try to find the last valid '"' and close from there.
+        # A simpler approach: remove the last partial key-value and close the JSON.
+        # Find the last occurrence of ',"' (the start of a new key)
+        last_comma = json_str.rfind(',"')
+        if last_comma != -1:
+            base = json_str[:last_comma] + '}'
+            # Test if this is valid JSON
+            json.loads(base)   # will raise if not, then fallback
+            return base
+    except:
+        pass
+
+    # If the above fails, try to close the JSON at the position where we have a valid object so far.
+    # Remove characters from the end until we can parse.
+    for i in range(len(json_str), 0, -1):
+        test = json_str[:i] + '}'
+        try:
+            json.loads(test)
+            return test
+        except:
             continue
-        if char == '\\':
-            escape_next = True
-            continue
-        if char == '"' and not escape_next:
-            in_string = not in_string
-        if in_string:
-            continue
-        if char in '{[':
-            stack.append(char)
-        elif char in '}]':
-            if stack:
-                stack.pop()
-    
-    # Close all unclosed structures
-    closing = ''
-    for char in reversed(stack):
-        closing += '}' if char == '{' else ']'
-    
-    return json_str + closing
+
+    raise ValueError("Unable to force-close truncated JSON")
 
 # ──────────────────────────────────────────────
-# 5. LLM CALL WITH RETRIES
+# 5. RATE‑LIMIT‑AWARE LLM CALL
 # ──────────────────────────────────────────────
 def generate_rashi(rashi_name, today_str, transit_text):
-    """Generate and validate a horoscope for one Rashi with retries."""
+    """Generate one rashi with robust retries and 429 handling."""
     user_prompt = (
         f"Rashi: {rashi_name}\nToday: {today_str}\n\n"
-        f"Factual planetary positions (house placements from {rashi_name}):\n{transit_text}\n\n"
-        f"Based ONLY on these exact positions, provide a detailed horoscope with these fields:\n"
-        f"general, luck, scope, study, love, travel, lucky_number, lucky_color.\n"
-        f"Return a JSON object. Ensure the JSON is complete and properly closed."
+        f"Transits (from {rashi_name}): {transit_text}\n\n"
+        f"Return a JSON with the 8 fields. Be very concise."
     )
 
     last_error = None
-    for attempt in range(1, RETRY_COUNT + 1):
+    for attempt in range(1, MAX_RETRIES + 1):
         try:
             response = client.chat.completions.create(
-                model=MODEL_NAME,
+                model=MODEL,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=TEMPERATURE,
                 top_p=TOP_P,
-                max_tokens=MAX_OUTPUT_TOKENS,
+                max_tokens=MAX_TOKENS,
             )
             content = response.choices[0].message.content
-            data = parse_and_validate_json(content)
+            data = parse_json(content)
 
-            # Validate content
+            # Validate keys
             required = {"general", "luck", "scope", "study", "love", "travel",
                         "lucky_number", "lucky_color"}
-            missing = required - data.keys()
-            if missing:
-                raise ValueError(f"Missing keys: {missing}")
+            if not required.issubset(data):
+                raise ValueError(f"Missing keys: {required - data.keys()}")
 
-            # Normalize types
+            # Normalise types
             data["lucky_number"] = int(data["lucky_number"])
             data["lucky_color"] = str(data["lucky_color"])
-            for key in ["general", "luck", "scope", "study", "love", "travel"]:
-                data[key] = str(data[key])
+            for k in ["general", "luck", "scope", "study", "love", "travel"]:
+                data[k] = str(data[k])
+
             return data
 
         except Exception as e:
             last_error = e
-            print(f"  Attempt {attempt}/{RETRY_COUNT} failed: {e}")
-            if attempt < RETRY_COUNT:
-                time.sleep(RETRY_DELAY)
+            # Check if it's a rate limit error (HTTP 429)
+            is_rate_limit = "rate limit" in str(e).lower() or "429" in str(e)
+            wait = 0
+            if is_rate_limit:
+                # Extract Retry-After header if available, else exponential backoff
+                # The sambanova library might not expose headers; we assume 10*2**attempt
+                wait = BASE_RETRY_DELAY * (2 ** attempt)   # 10s, 20s, 40s, ...
+                print(f"  Rate limited; waiting {wait}s")
+            print(f"  Attempt {attempt}/{MAX_RETRIES} failed: {e}")
+            if attempt < MAX_RETRIES:
+                time.sleep(wait or BASE_RETRY_DELAY)
 
     raise RuntimeError(
-        f"Failed to generate horoscope for {rashi_name} after {RETRY_COUNT} attempts. "
+        f"Failed to generate horoscope for {rashi_name} after {MAX_RETRIES} attempts. "
         f"Last error: {last_error}"
     )
 
@@ -289,7 +275,7 @@ def main():
     today_iso = today.isoformat()
     jd = swe.julday(today.year, today.month, today.day, 0.0)
 
-    print("Computing planetary positions (Moshier ephemeris) …")
+    print("Computing planetary positions …")
     positions = compute_planet_positions(jd)
     for name, data in positions.items():
         print(f"  {name}: {data['sign_name']} {data['degree']}°")
@@ -309,6 +295,8 @@ def main():
         data = generate_rashi(rashi, today_str, transit)
         output["rashi_horoscopes"][rashi] = data
         print("✓")
+        # Wait between consecutive calls to avoid rate limits
+        time.sleep(REQUEST_DELAY)
 
     out_path = os.path.join("data", "horoscopes.json")
     with open(out_path, "w", encoding="utf-8") as f:
