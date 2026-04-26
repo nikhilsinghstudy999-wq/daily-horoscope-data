@@ -1,17 +1,126 @@
 {
-  "date": "2026-04-26T16:37:15.848961",
+  "date": "2026-04-26T17:34:14.726755",
+  "run_timestamp": "2026-04-26T17:34:14.726784+00:00",
   "rashi_horoscopes": {
-    "Mesha (Aries)": "Today you may feel a surge of energy. Channel it into productive tasks. Your lucky color is red. Tip: Offer water to the Sun in the morning.",
-    "Vrishabha (Taurus)": "A good day for financial planning. Avoid arguments. Wear green for luck. Tip: Donate white clothes to the needy.",
-    "Mithuna (Gemini)": "Communication skills shine today. Connect with loved ones. Lucky number 5. Tip: Chant the Gayatri mantra.",
-    "Karka (Cancer)": "Emotions run deep today. Spend time near water. Lucky color silver. Tip: Help your mother or an elder.",
-    "Simha (Leo)": "Leadership qualities are strong. Take initiative at work. Lucky stone ruby. Tip: Practice Surya Namaskar.",
-    "Kanya (Virgo)": "Focus on health and routine. Organize your space. Lucky number 8. Tip: Offer food to birds.",
-    "Tula (Libra)": "Harmony in relationships is key. Avoid conflicts. Lucky color blue. Tip: Light a ghee lamp in the evening.",
-    "Vrishchika (Scorpio)": "Deep insights may come. Trust your intuition. Lucky color maroon. Tip: Chant the Mahamrityunjaya mantra.",
-    "Dhanu (Sagittarius)": "Adventure calls. Plan something new. Lucky number 3. Tip: Feed a stray animal.",
-    "Makara (Capricorn)": "Career opportunities arise. Stay disciplined. Lucky stone blue sapphire. Tip: Donate black sesame seeds.",
-    "Kumbha (Aquarius)": "Innovative ideas flow. Share your knowledge. Lucky color purple. Tip: Practice meditation for 10 minutes.",
-    "Meena (Pisces)": "Creativity and spirituality are heightened. Listen to music. Lucky number 9. Tip: Visit a temple or holy place."
+    "Mesha (Aries)": {
+      "general": "The Sun and Mercury are both transiting Aries today, energizing your core identity and communication style. Mars, the ruler of Aries, is positioned in Cancer, urging you to balance assertiveness with emotional sensitivity. This alignment brings a burst of confidence, but be mindful of impulsive decisions that could ripple into later in the day.",
+      "luck": "Your luck factor is moderate today; small opportunities arise if you stay attentive, especially in areas related to personal projects and short‑term goals.",
+      "scope": "Career and finance are highlighted, with a chance to showcase leadership at work. Health benefits from a disciplined routine, while family matters may require a gentle, nurturing approach.",
+      "study": "Students will find their focus sharpened, making it an ideal day for intensive study sessions or completing pending assignments. However, avoid multitasking, as scattered energy could dilute comprehension.",
+      "love": "In relationships, the Sun's vigor fuels passion, but Mars in Cancer suggests you should temper assertiveness with empathy. Single Aries may feel a sudden attraction, yet it's wise to gauge compatibility before diving in.",
+      "travel": "Travel plans are favorable if they involve short trips or local outings; long journeys should be double‑checked for timing, as Mercury's influence may cause minor miscommunications.",
+      "lucky_number": 7,
+      "lucky_color": "Red"
+    },
+    "Vrishabha (Taurus)": {
+      "general": "The Sun shines in your sign today, bringing a surge of confidence and a clear sense of purpose. Venus, your ruling planet, forms a harmonious aspect with Mercury, enhancing communication and artistic expression. However, Mars squares your chart, urging you to avoid impulsive decisions, especially in financial matters. Overall, the day favors steady progress and thoughtful planning.",
+      "luck": "Your luck is moderate to good, with opportunities appearing for those who act with patience and discernment.",
+      "scope": "Key areas of focus include finances, health routines, and personal relationships; creative projects also receive a boost.",
+      "study": "Students will find concentration easier, especially in subjects that require practical application, but should double‑check calculations to avoid minor errors.",
+      "love": "For partners, today deepens emotional bonding through shared activities, while singles may encounter a potential match in a work‑related setting; honesty will be the cornerstone of any new connection.",
+      "travel": "Short, well‑planned trips are favored; avoid long journeys or sudden travel plans as they may encounter unexpected delays.",
+      "lucky_number": 6,
+      "lucky_color": "Green"
+    },
+    "Mithuna (Gemini)": {
+      "general": "Today, Gemini, the Moon's transit through your 3rd house enhances communication, making it an excellent day for networking and sharing ideas. Mercury, your ruling planet, forms a harmonious aspect with Venus, bringing a pleasant flow in personal interactions. However, be cautious of overcommitting, as the Sun's square to Mars may stir impatience. By staying grounded, you can turn this dynamic energy into productive outcomes.",
+      "luck": "Your luck is moderate today, with a slight boost in social and creative endeavors, but financial ventures may require extra scrutiny.",
+      "scope": "Career and professional projects, personal relationships, and financial planning are the primary areas of focus.",
+      "study": "Students will find their concentration sharpened, especially in subjects requiring analytical thinking; group study sessions will be particularly fruitful.",
+      "love": "In romance, open dialogue will deepen bonds, and single Geminis may attract interest through witty conversation, though it's wise to avoid impulsive decisions.",
+      "travel": "Travel plans are favorable, especially short trips; ensure you double-check reservations and keep travel documents handy to avoid minor hiccups.",
+      "lucky_number": 27,
+      "lucky_color": "emerald"
+    },
+    "Karka (Cancer)": {
+      "general": "The Moon is conjunct your natal Sun today, amplifying your emotional sensitivity and intuition. A subtle tension between Mars and Saturn may cause minor delays in professional tasks, urging you to exercise patience. Trust your gut feelings when making decisions, as they are likely to guide you toward the right path.",
+      "luck": "Your luck is moderate today; small opportunities may arise if you stay alert, but avoid taking unnecessary risks.",
+      "scope": "Career and health are the primary focus, with finances receiving a gentle boost. Personal relationships will require extra care, while creative projects may see a spark of inspiration.",
+      "study": "Students will benefit from a focused study session in the afternoon; reviewing material rather than starting new topics will yield better retention. A short break after each hour will keep your mind fresh.",
+      "love": "Emotional bonds are deepening, especially for those already in a partnership; honest conversations will strengthen trust. Single Cancers might feel a sudden attraction, but it's wise to gauge intentions before committing.",
+      "travel": "Travel plans are favorable if they involve short trips or local outings; long-distance journeys could encounter minor logistical hiccups, so double‑check reservations and leave early.",
+      "lucky_number": 7,
+      "lucky_color": "teal"
+    },
+    "Simha (Leo)": {
+      "general": "Today, Simha natives will feel a surge of confidence as the Sun aligns with supportive aspects, encouraging you to take bold steps in personal projects. However, the influence of Mercury in the 12th house suggests caution against hidden misunderstandings, so double‑check communications. Evening hours are favorable for relaxation and creative expression, helping you restore balance after a busy day.",
+      "luck": "Your luck is moderate today; opportunities appear when you actively seek them, especially in professional settings, but avoid gambling or impulsive financial moves.",
+      "scope": "Career and personal reputation take center stage, while health and finances require careful monitoring; relationships and social interactions will benefit from honest dialogue.",
+      "study": "Students will find concentration enhanced during the morning, making it an ideal time for tackling complex subjects, but a brief break after lunch will prevent mental fatigue.",
+      "love": "For those in a partnership, open conversation will deepen trust, and single Simhas may attract interest through a charismatic presentation at social gatherings. Be mindful of pride that could cause minor friction.",
+      "travel": "Travel plans are smooth if you depart early and keep travel documents organized; last‑minute changes could lead to delays, so confirm bookings in advance.",
+      "lucky_number": 7,
+      "lucky_color": "gold"
+    },
+    "Kanya (Virgo)": {
+      "general": "Today, the Sun in Taurus squares your natal Mercury, prompting you to double-check details at work and avoid hasty decisions. Your analytical mind is sharp, making it an excellent day for organizing tasks and refining plans. However, be mindful of overthinking, as it may lead to unnecessary stress. Trust your intuition when unexpected opportunities arise.",
+      "luck": "Your luck is moderate; small positive turns can appear if you stay disciplined, but avoid gambling or speculative ventures.",
+      "scope": "Career and health dominate the day's focus, with finances showing steady but slow progress. Relationships and personal growth also receive subtle support, encouraging balanced attention across these areas.",
+      "study": "Students will find concentration heightened, especially in subjects requiring precision and detail. It's a good day to review notes, complete assignments, and seek clarification from teachers, but avoid procrastination.",
+      "love": "For singles, a chance meeting may occur through a professional setting, while couples should communicate openly to prevent misunderstandings. Small gestures of appreciation will strengthen bonds.",
+      "travel": "Travel plans are favorable if they involve short trips or local outings; long journeys should include extra time for possible delays. Pack a light snack and stay hydrated.",
+      "lucky_number": 7,
+      "lucky_color": "emerald"
+    },
+    "Tula (Libra)": {
+      "general": "Today, Libra, the Moon aligns with Venus, bringing a gentle wave of emotional clarity that helps you resolve lingering tensions. Your innate sense of balance will be heightened, allowing you to make fair decisions at work and in personal matters. However, be cautious of overindulgence, as the Sun's aspect may tempt you to seek immediate pleasures over long‑term goals. Trust your intuition, and you will navigate the day with grace.",
+      "luck": "Your luck is moderate but improves in the afternoon as Mercury moves into a supportive trine, enhancing communication and quick thinking.",
+      "scope": "Key areas of focus include professional negotiations, financial planning, and social harmony; relationships and creative projects also receive a subtle boost.",
+      "study": "Students will find concentration easier after lunch, especially in subjects requiring analytical thought such as mathematics or law; a short walk can further sharpen mental acuity.",
+      "love": "Romantic partners experience a deeper connection through honest conversation, and single Libras may attract interest by showcasing their artistic side. Avoid rushing into commitments; let the conversation flow naturally.",
+      "travel": "Travel plans are favorable, especially short trips to nearby cultural sites; ensure you double‑check reservations as minor logistical hiccups may arise.",
+      "lucky_number": 27,
+      "lucky_color": "emerald"
+    },
+    "Vrishchika (Scorpio)": {
+      "general": "The Sun aligns with Saturn in Aquarius, urging you to focus on long‑term goals while keeping emotions in check. Mars in Libra brings a surge of determination, helping you tackle tasks that require persistence. However, the waning Moon in Taurus suggests a need for patience in personal matters, so avoid rushing decisions today.",
+      "luck": "Your luck is moderate; opportunities arise if you act with discipline, but impulsive moves may backfire.",
+      "scope": "Career and financial matters are highlighted, with a chance for a small breakthrough at work. Health requires attention to stress levels, and relationships may experience subtle tension that needs gentle handling.",
+      "study": "Students will find concentration improving after midday, making it an ideal time for complex problem‑solving. Review notes from earlier in the week to solidify understanding before exams.",
+      "love": "Emotional currents run deep today; honest communication will strengthen bonds, while hidden frustrations may surface if left unaddressed. Single Scorpios might feel a sudden attraction, but it's wise to gauge intentions before committing.",
+      "travel": "Travel plans are favorable if you double‑check reservations and avoid last‑minute changes. Short trips for work are smoother than long journeys, and keeping travel documents organized will prevent delays.",
+      "lucky_number": 7,
+      "lucky_color": "crimson"
+    },
+    "Dhanu (Sagittarius)": {
+      "general": "Today, Sagittarius, the Sun squares your ruling planet Jupiter, urging you to balance optimism with realistic planning. Mercury’s brief retrograde in Taurus may cause minor miscommunications, so double‑check important messages. Mars in Cancer energizes your emotional drive, making it a good day for heartfelt initiatives, while the Moon in Virgo highlights attention to detail in your daily tasks.",
+      "luck": "Your luck is moderate; the planetary alignment offers opportunities, but success depends on careful execution and avoiding impulsive decisions.",
+      "scope": "Career and finance see a boost from Mars’s assertive energy, encouraging decisive action in projects. Health benefits from the Moon’s analytical influence, prompting you to adopt disciplined routines. Social interactions may feel intense, so practice patience.",
+      "study": "Students will find their concentration heightened as the Moon in Virgo supports detailed study, but Mercury’s retrograde may cause occasional confusion in technical subjects; review notes twice to ensure clarity.",
+      "love": "In relationships, Mars fuels passion, making it an excellent time to express affection, yet the Sun-Jupiter square warns against overpromising; keep expectations realistic to maintain harmony.",
+      "travel": "Travel plans should include extra time for possible delays due to Mercury’s retrograde; short trips are favored, while long journeys are best postponed if flexibility is limited.",
+      "lucky_number": 27,
+      "lucky_color": "Royal Blue"
+    },
+    "Makara (Capricorn)": {
+      "general": "The Sun's placement in steady Taurus brings a grounded energy to your day, helping you focus on practical tasks and long‑term goals. Mars' subtle influence may stir a bit of restlessness, urging you to channel that drive into productive activities rather than conflicts. You may feel a heightened sense of responsibility, especially in matters that affect your family or close community. Overall, the day favors disciplined effort and thoughtful planning.",
+      "luck": "Your luck is moderate today, with opportunities appearing for those who are prepared; spontaneous risks are less likely to pay off.",
+      "scope": "Career and financial matters are highlighted, as are health routines and family responsibilities; creative projects may need extra patience.",
+      "study": "Students will benefit from a structured study schedule and should avoid last‑minute cramming; revisiting core concepts will yield better retention.",
+      "love": "In relationships, clear communication is essential; couples may need to discuss future plans, while singles might find attraction through shared values rather than fleeting romance.",
+      "travel": "Travel plans should be double‑checked for timing and logistics; short trips for work are favored, but long journeys may encounter minor delays.",
+      "lucky_number": 7,
+      "lucky_color": "maroon"
+    },
+    "Kumbha (Aquarius)": {
+      "general": "Today the Sun in Taurus forms a harmonious aspect with your ruling planet Saturn, granting you mental clarity and disciplined focus. You will feel a strong urge to organize your thoughts and set realistic goals, especially in projects that require long‑term planning. However, a subtle tension from Mars in Cancer may cause occasional impatience, so pause before reacting to sudden changes.",
+      "luck": "Your luck is moderate but steady; the alignment of Jupiter in Taurus adds a gentle boost to opportunities that arise through practical effort rather than chance.",
+      "scope": "Career and financial matters are highlighted, with a clear chance to make progress on long‑term investments. Health benefits from a disciplined routine, while personal relationships may need a balanced approach to avoid over‑analysis.",
+      "study": "Students will find today's planetary setup ideal for deep research and collaborative study groups, as the Mercury‑Saturn connection sharpens concentration. Exams that test practical application will feel more manageable, but avoid cramming at the last minute.",
+      "love": "For partnered Aquarians, communication deepens as you both share future visions, fostering emotional intimacy. Singles may encounter a potential match through academic or professional circles, especially if you express genuine curiosity about their ideas.",
+      "travel": "Short trips for work or education are favored; if you travel, choose routes that allow you to reflect, such as scenic drives rather than rushed itineraries. Delay any long‑distance journeys until after sunset to minimize unexpected delays.",
+      "lucky_number": 27,
+      "lucky_color": "indigo"
+    },
+    "Meena (Pisces)": {
+      "general": "Today, the alignment of Jupiter and Mercury energizes your intuition, urging you to trust your inner voice when making decisions. You may feel a surge of creative inspiration, especially in artistic or spiritual pursuits. However, be cautious of overcommitting, as the day's energy can also bring a tendency to say yes to everything. Balance your enthusiasm with practical planning to make the most of this auspicious period.",
+      "luck": "Your luck is moderate to high today, with favorable outcomes in endeavors that involve communication and networking. Small serendipitous moments may arise, especially when you remain open to unexpected opportunities.",
+      "scope": "Career and finances, personal relationships, and spiritual growth are highlighted. Professional projects may gain momentum, while personal bonds deepen through heartfelt conversations. A reflective practice such as meditation can amplify your inner clarity.",
+      "study": "Students will find their concentration sharpened, making it an excellent day for tackling complex subjects or preparing for exams. Group study sessions are especially productive, as collaborative energy is heightened. Avoid procrastination by setting clear, short-term goals.",
+      "love": "Romantic connections are illuminated by compassion and open dialogue; partners who share their feelings will strengthen their bond. Single Pisces may attract attention through genuine kindness, making social gatherings promising. Remember to listen as much as you speak to foster mutual understanding.",
+      "travel": "Travel plans are generally smooth, but it's wise to double-check reservations and allow extra time for transit. Short trips for personal reflection or visiting nature spots can be especially rejuvenating. Avoid long-distance travel late in the evening to prevent fatigue.",
+      "lucky_number": 27,
+      "lucky_color": "teal"
+    }
   }
 }
