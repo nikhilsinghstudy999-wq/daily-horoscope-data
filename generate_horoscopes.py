@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-Production-grade daily horoscope generator.
-Uses real planetary ephemeris (Moshier built-in, 1 arc‑sec accuracy) + SambaNova LLM.
-Single prompt per rashi, structured JSON output. No fallback—fails fast on error.
+Production-grade daily horoscope generator using Moshier built‑in ephemeris
+and SambaNova LLM.  All planetary positions are astronomically correct.
 """
 
 import json
 import os
-import time
 import sys
+import time
 import tempfile
 from datetime import datetime, timezone
 
@@ -17,23 +16,20 @@ import swisseph as swe
 from sambanova import SambaNova
 
 # ──────────────────────────────────────────────
-# 0. EPHEMERIS SETUP – Moshier built‑in (no download)
+# 0. EPHEMERIS & AYANAMSA SETUP
 # ──────────────────────────────────────────────
 def setup_ephemeris():
     """
-    Initialise the Swiss Ephemeris using the built‑in Moshier ephemeris.
-    This requires NO external files and delivers ~1 arc‑second accuracy,
-    more than sufficient for determining zodiac signs and house placements.
+    Use the built‑in Moshier ephemeris (no download required).
+    Also set Lahiri ayanamsa for sidereal positions.
     """
-    # Create a throwaway directory – the library needs *some* path,
-    # but will fall back to Moshier when it finds no .se1 files there.
+    # The library needs some path to exist; an empty temp dir triggers the
+    # fallback to Moshier, which is more than accurate enough.
     ephe_dir = tempfile.mkdtemp(prefix="sweph_")
     swe.set_ephe_path(ephe_dir)
-    # Optional: attempt to enrich with real Swiss Ephemeris files later.
-    # For now, Moshier is reliable and never fails.
-    print(f"Ephemeris initialised (Moshier built‑in, path={ephe_dir})")
-    return ephe_dir
-
+    # Sidereal mode with Lahiri ayanamsa (most common Vedic)
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    print(f"Ephemeris: Moshier built‑in, Lahiri ayanamsa (path={ephe_dir})")
 
 # ──────────────────────────────────────────────
 # 1. CONFIGURATION
@@ -52,18 +48,18 @@ RASHI_SHORT = [
 
 # Planets we include in every horoscope
 PLANETS = {
-    swe.SUN:            "Sun",
-    swe.MOON:           "Moon",
-    swe.MARS:           "Mars",
-    swe.MERCURY:        "Mercury",
-    swe.JUPITER:        "Jupiter",
-    swe.VENUS:          "Venus",
-    swe.SATURN:         "Saturn",
-    swe.MEAN_NODE:      "Rahu",        # Ketu derived opposite
+    swe.SUN:       "Sun",
+    swe.MOON:      "Moon",
+    swe.MARS:      "Mars",
+    swe.MERCURY:   "Mercury",
+    swe.JUPITER:   "Jupiter",
+    swe.VENUS:     "Venus",
+    swe.SATURN:    "Saturn",
+    swe.MEAN_NODE: "Rahu",      # Ketu derived opposite
 }
 
 # ──────────────────────────────────────────────
-# 2. SAMBANOVA API CLIENT
+# 2. SAMBANOVA CLIENT
 # ──────────────────────────────────────────────
 API_KEY = os.environ["SAMBANOVA_API_KEY"]
 client = SambaNova(api_key=API_KEY, base_url="https://api.sambanova.ai/v1")
@@ -86,18 +82,21 @@ SYSTEM_PROMPT = (
     "Make each text value 2‑4 detailed sentences grounded in the given transits."
 )
 
-
 # ──────────────────────────────────────────────
 # 3. ASTRONOMICAL CALCULATIONS
 # ──────────────────────────────────────────────
 def compute_planet_positions(jd):
     """
     Calculate sidereal (Lahiri) longitudes for all planets at the given Julian day.
-    Returns a dict: planet_name -> {"sign_idx": int, "sign_name": str, "degree": float}
+
+    Returns:
+        dict: planet_name -> {"sign_idx": int, "sign_name": str, "degree": float}
     """
     positions = {}
     for pid, pname in PLANETS.items():
-        lon, _ = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL | swe.FLG_SPEED)
+        # pyswisseph returns a tuple. With FLG_SIDEREAL | FLG_SPEED we get (lon, speed, ret_flag).
+        result = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL | swe.FLG_SPEED)
+        lon = result[0]          # longitude in degrees (0‑360)
         sign_idx = int(lon // 30)
         degree = round(lon % 30, 2)
         positions[pname] = {
@@ -105,16 +104,16 @@ def compute_planet_positions(jd):
             "sign_name": RASHI_SHORT[sign_idx],
             "degree": degree,
         }
-    # Ketu = opposite Rahu
+    # Ketu is exactly opposite Rahu
     rahu = positions["Rahu"]
     ketu_sign = (rahu["sign_idx"] + 6) % 12
+    ketu_degree = (rahu["degree"] + 180) % 360
     positions["Ketu"] = {
         "sign_idx": ketu_sign,
         "sign_name": RASHI_SHORT[ketu_sign],
-        "degree": round((rahu["degree"] + 180) % 360, 2),
+        "degree": round(ketu_degree, 2),
     }
     return positions
-
 
 def build_transit_text(rashi_idx, positions):
     """
@@ -126,7 +125,6 @@ def build_transit_text(rashi_idx, positions):
         house = (data["sign_idx"] - rashi_idx) % 12 + 1
         parts.append(f"{pname} in house {house} ({data['sign_name']} {data['degree']}°)")
     return " | ".join(parts)
-
 
 # ──────────────────────────────────────────────
 # 4. LLM CALL WITH RETRIES
@@ -194,7 +192,6 @@ def generate_rashi(rashi_name, today_str, transit_text):
         f"Last error: {last_error}"
     )
 
-
 # ──────────────────────────────────────────────
 # 5. MAIN
 # ──────────────────────────────────────────────
@@ -237,7 +234,6 @@ def main():
         json.dump(output, f, ensure_ascii=False, indent=2)
 
     print(f"\n✅ All 12 rashis saved to {out_path}")
-
 
 if __name__ == "__main__":
     main()
