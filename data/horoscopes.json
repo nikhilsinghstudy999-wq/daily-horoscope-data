@@ -1,46 +1,46 @@
 {
-  "date": "2026-04-27T08:10:41.368415",
-  "run_timestamp": "2026-04-27T08:11:18.290567+00:00",
+  "date": "2026-04-27T08:21:36.897325",
+  "run_timestamp": "2026-04-27T08:22:17.484350+00:00",
   "rashi_horoscopes": {
-    "Mesha (Aries)": {
-      "general": "Today, a dynamic and adventurous vibe surrounds you, Mesha (Aries). With the Sun shining bright in your ascendant, you're filled with energy and a sense of purpose. However, Mars and Saturn in the 12th house suggest that you may be dealing with some emotional or spiritual challenges, which could be affecting your overall well-being.",
-      "luck": "Your luck is changing for the better, but it's essential to be cautious and patient. Jupiter's placement in your 3rd house indicates that you'll receive opportunities for growth and learning, but you must be willing to take calculated risks.",
-      "scope": "Your scope of influence is expanding, but you must be mindful of your emotions and relationships. The Moon in your 5th house suggests that you're feeling passionate and expressive, but you may need to balance your emotions with logic and reason.",
-      "study": "You're in a great period for learning and personal growth, Mesha (Aries). Jupiter's transit in your 3rd house indicates that you'll have a strong desire to acquire knowledge and expand your horizons. Focus on developing new skills and taking on new challenges.",
-      "love": "Romantic relationships may be a bit tumultuous today, but it's an opportunity for growth and learning. The Moon in your 5th house suggests that you're feeling passionate and expressive, but you may need to balance your emotions with logic and reason.",
-      "travel": "You may feel an overwhelming urge to travel or explore new places, but it's essential to be cautious and patient. Jupiter's placement in your 3rd house indicates that you'll receive opportunities for growth and learning, but you must be willing to take calculated risks.",
+    "Simha (Leo)": {
+      "general": "Today, Simha natives may feel a sense of restlessness due to Mars and Mercury in house 8, indicating a need for change and exploration. Their mood is also influenced by the Moon's presence in house 1, making them more emotional and sensitive. With Sun in house 9, they may feel a sense of expansion and growth, but this can also lead to overconfidence.",
+      "luck": "Simha natives may encounter unexpected challenges and setbacks today, particularly in their personal relationships, due to Rahu in house 7. However, they can navigate these difficulties with the help of Jupiter in house 11, which promotes optimism and faith. Their overall luck may be influenced by Saturn's restrictive presence in house 8.",
+      "scope": "The current planetary transits suggest that Simha natives should focus on their personal growth and expansion, as indicated by the Sun's presence in house 9. They may need to be more adaptable and flexible, especially in their relationships, due to Rahu's influence. With Jupiter in house 11, they can explore new opportunities and take calculated risks.",
+      "study": "For Simha natives, today may be a challenging day for studies, as Mars and Mercury in house 8 can make them feel restless and easily distracted. However, with the Moon's presence in house 1, they can tap into their emotional intelligence and intuition, which can aid in their learning process. They should focus on developing their problem-solving skills and staying organized.",
+      "love": "In matters of love, Simha natives may experience some tension and disagreements today, due to Rahu's influence in house 7. However, with Venus in house 10, they can attract positive attention and affection from others. They should communicate openly and honestly with their partner and be willing to compromise.",
+      "travel": "Simha natives may feel the urge to travel and explore new places today, as indicated by the Sun's presence in house 9. With Jupiter in house 11, they can take calculated risks and venture into new territories. However, they should be mindful of their finances and plan their trips carefully.",
+      "lucky_number": 43,
+      "lucky_color": "Golden"
+    },
+    "Kanya (Virgo)": {
+      "general": "Today, you may feel a mix of emotions due to the Moon in house 12, creating a connection with your subconscious mind and past experiences. This can influence your mood and decisions. Your focus should be on emotional stability and letting go of past baggage.",
+      "luck": "Your luck is somewhat neutral today, with the Sun in house 8 bringing some opportunities for personal growth and transformation, but also some challenges due to the Moon's influence. You may need to navigate through these challenges carefully.",
+      "scope": "Your scope of work and responsibilities is quite expansive today, with Jupiter in house 10 suggesting a need for expansion and growth in your career. However, Saturn's presence in house 7 may indicate some obstacles and delays. Be patient and persistent.",
+      "study": "Your mental clarity and focus are somewhat affected today, with Mercury in house 7 indicating some mental fogginess and confusion. You may need to take breaks and practice self-care to maintain your mental well-being.",
+      "love": "Your romantic relationships may be affected by the Venus in house 9, suggesting a need for emotional connection and intimacy. However, the Moon's influence may create some emotional ups and downs. Communicate openly and honestly with your partner.",
+      "travel": "Your travel plans may be delayed or put on hold today, with Saturn's presence in house 7 indicating some obstacles and delays. However, Jupiter's influence in house 10 may suggest a need for expansion and exploration in your travels. Be patient and flexible.",
+      "lucky_number": 81,
+      "lucky_color": "Yellow"
+    },
+    "Tula (Libra)": {
+      "general": "You may feel an urge to take risks in your relationships, as the Sun in the 7th house is pushing you to be more assertive and direct with your partner. However, this could also lead to conflicts if not managed properly. It's essential to maintain a balance between being assertive and being sensitive to your partner's feelings.",
+      "luck": "Your luck may be influenced by the placement of Rahu in the 5th house, indicating a potential increase in good fortune through your creative pursuits or children. However, it's essential to be cautious and not take unnecessary risks. The Moon in the 11th house is also suggesting a possibility of unexpected gains or windfalls.",
+      "scope": "Your scope for growth and expansion is indicated by the presence of Jupiter in the 9th house. This transit is favorable for higher education, travel, or any long-distance journey. The Jupiter transit is also suggesting a positive influence on your reputation and social standing.",
+      "study": "The presence of Jupiter in the 9th house is indicating a positive influence on your academic pursuits or any higher education endeavors. However, the placement of Saturn in the 6th house may suggest a need to be more disciplined and hardworking to achieve your goals. It's essential to stay focused and avoid procrastination.",
+      "love": "The Sun in the 7th house is indicating a strong desire for romance and passion in your relationships. However, the presence of Saturn in the 6th house may suggest a need to work on your emotional stability and avoid being too possessive or controlling. The Venus in the 8th house is also suggesting a deep emotional connection with your partner.",
+      "travel": "The presence of Jupiter in the 9th house is indicating a positive influence on your travel plans or any long-distance journey. This transit is favorable for exploring new places, cultures, and meeting new people. However, it's essential to be cautious and plan carefully to avoid any unexpected expenses or setbacks.",
       "lucky_number": 67,
-      "lucky_color": "Gold"
-    },
-    "Vrishabha (Taurus)": {
-      "general": "Today, with the Sun in the 12th house, you may feel withdrawn and introspective, reflecting on past experiences and emotions. The Moon in the 4th house suggests a need for emotional comfort and stability, possibly seeking solace in family or familiar surroundings. Mars and Mercury in the 11th house indicate a desire for exploration and expansion of your social connections, but also a risk of overcommitting or taking on too much.",
-      "luck": "Your luck is influenced by Jupiter's placement in the 2nd house, suggesting an increase in material wealth and a focus on financial stability. However, the presence of Saturn and Rahu in the 11th house may indicate some challenges in your relationships and a need for careful decision-making regarding partnerships and collaborations.",
-      "scope": "The current transits indicate a focus on your personal identity and sense of self, with Venus in the 1st house highlighting your values and passions. The 11th house placements of Mars, Mercury, and Saturn suggest a need to balance your desire for independence with your need for connection and community.",
-      "study": "With Mercury in the 11th house, you may be drawn to learning and intellectual pursuits that allow you to expand your social connections and explore new ideas. However, the presence of Saturn in the 11th house may indicate a need to be more disciplined and focused in your studies.",
-      "love": "The current transits suggest a focus on romance and relationships, with Venus in the 1st house highlighting your values and passions. However, the 11th house placements of Mars and Saturn may indicate some challenges in your relationships, particularly if you're feeling overwhelmed or uncertain.",
-      "travel": "The presence of Rahu in the 10th house suggests a need to take calculated risks and explore new horizons, possibly related to your career or public image. However, the 11th house placements of Mars and Saturn may indicate some challenges in your travels, particularly if you're feeling uncertain or unprepared.",
-      "lucky_number": 42,
-      "lucky_color": "Emerald"
-    },
-    "Mithuna (Gemini)": {
-      "general": "You are likely to feel adventurous and enthusiastic today due to the energizing presence of Mars in your 10th house, pushing you to pursue your passions and take bold actions. However, Mercury's conjunction with Mars may lead to impulsive decisions, so be cautious and weigh your options carefully. Jupiter's placement in your 1st house indicates growth and expansion, but you may feel a bit restless and seek new experiences.",
-      "luck": "Your luck is tied to your ability to take calculated risks and be adaptable in the face of change. With Mars and Mercury in your 10th house, you may encounter unexpected opportunities or challenges that require quick thinking and action.",
-      "scope": "Your career and public image are under the spotlight today, thanks to Mars and Mercury in your 10th house. Be prepared to take on new responsibilities and showcase your skills, but also be mindful of your reputation and how you present yourself to others.",
-      "study": "With Jupiter in your 1st house, you may feel a strong desire to learn and grow, but Mercury's conjunction with Mars may make it difficult to focus and concentrate. Try to break down your study material into manageable chunks and take regular breaks to stay motivated.",
-      "love": "Venus in your 12th house indicates a need for intimacy and emotional connection in your relationships. However, the Moon's presence in your 3rd house may make you feel a bit restless and seek excitement in your romantic life. Be honest with your partner about your needs and desires.",
-      "travel": "Rahu in your 9th house suggests that you may have a strong desire to travel and explore new places, but Saturn's presence in your 10th house may make you feel a bit uncertain about your career and financial stability. Consider taking a break from work and focusing on your personal growth.",
-      "lucky_number": 43,
-      "lucky_color": "Blue"
-    },
-    "Karka (Cancer)": {
-      "general": "You may experience a mix of emotions today due to the presence of the Moon in Leo and the Sun in Aries, causing your emotional needs to clash with your desire for independence. Mars in Pisces may lead to feelings of frustration and restlessness, which can be managed through meditation and relaxation techniques.",
-      "luck": "Your luck may be influenced by the presence of Jupiter in Gemini, which can bring opportunities for learning and growth. However, Saturn in Pisces may also bring some challenges and setbacks, so it's essential to stay focused and adaptable.",
-      "scope": "With Mars and Mercury in Pisces, your communication style may become more intuitive and empathetic, allowing you to connect with others on a deeper level. This can be beneficial for your relationships and career, but also be cautious of gossip and unnecessary drama.",
-      "study": "You may feel a strong desire to learn and explore new subjects, thanks to the influence of Jupiter in Gemini. However, the presence of Saturn in Pisces may make you feel overwhelmed or uncertain, so it's essential to break down your goals into manageable tasks.",
-      "love": "With the Moon in Leo, you may be feeling more confident and expressive in your relationships, which can be beneficial for building intimacy and connection. However, Mars in Pisces may also bring some jealousy or possessiveness, so it's essential to communicate openly and honestly with your partner.",
-      "travel": "You may feel a strong desire to travel and explore new places, thanks to the influence of Jupiter in Gemini. However, the presence of Saturn in Pisces may make you feel uncertain or hesitant, so it's essential to plan carefully and research thoroughly.",
-      "lucky_number": 43,
       "lucky_color": "Turquoise"
+    },
+    "Vrishchika (Scorpio)": {
+      "general": "As the Sun shines bright in the 6th house, expect increased responsibilities and demands on your energy. With the Moon in the 10th house, you may feel a strong desire for recognition and prestige, but Saturn's presence in the 5th house suggests a need for patience and hard work. This is a time to focus on your goals and ambitions.",
+      "luck": "Your luck is influenced by Mars in the 5th house, which can bring sudden opportunities and adventures. However, be cautious not to take unnecessary risks, as Saturn's presence can also indicate delays and setbacks.",
+      "scope": "With Jupiter in the 8th house, your scope for growth and expansion is in the realm of finances and material possessions. This is a time to invest in your future and secure your financial stability.",
+      "study": "Mercury's placement in the 5th house suggests that your mind is active and curious, and you may find yourself drawn to creative pursuits or intellectual hobbies. However, Saturn's presence can also indicate a need for discipline and focus in your studies.",
+      "love": "Venus in the 7th house indicates a strong connection with your partner or someone special. This is a time to nurture your relationship and work on building a strong foundation of trust and communication.",
+      "travel": "Rahu's placement in the 4th house suggests that you may have a desire to travel to new and unfamiliar places, but be cautious not to take unnecessary risks or venture into unknown territories without proper planning.",
+      "lucky_number": 42,
+      "lucky_color": "Navy"
     }
   }
 }
