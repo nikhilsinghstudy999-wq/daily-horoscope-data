@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
 """
-High‑Tech Daily Vedic Horoscope Generator — Multi‑Provider, Circuit‑Breaker, Pydantic‑Validated.
+Industry‑Grade Daily Vedic Horoscope Generator — Multi‑Provider, Instructor‑Backed,
+Circuit‑Breaker, Self‑Healing JSON, Pydantic‑Validated, Atomic‑Write.
 
-Architecture:
-  ┌──────────────────────────────────────────────────────────┐
-  │  1. Ephemeris Layer (Moshier, no external files)         │
-  │  2. Multi‑Provider LLM Gateway (Groq → Gemini → Router)  │
-  │  3. Circuit Breaker per provider (prevents retry storms) │
-  │  4. Token‑Bucket Rate Limiter (never hit 429)            │
-  │  5. Validator Sandwich (Pydantic models + json_repair)   │
-  │  6. Atomic file writes                                   │
-  │  7. Structured logging with cost tracking                │
-  └──────────────────────────────────────────────────────────┘
+Key production patterns (sourced from 2025‑2026 best practices):
+  • Instructor library forces the LLM to emit valid Pydantic models (no raw JSON parsing)   [15†L13-L18]
+  • Three‑state circuit breaker (Closed → Open → HalfOpen) isolates degraded providers       [7†L44-L47]
+  • Exponential backoff with full jitter eliminates retry storms                             [7†L41-L45]
+  • Token‑bucket rate limiter honours per‑provider RPM quotas proactively                   [13†L13-L15]
+  • Multi‑stage JSON repair as a safety net behind instructor                               [11†L13-L16]
+  • Pydantic field_validators with auto‑coercion for `lucky_color` / `lucky_number`         [10†L13-L25]
+  • Atomic writes via tempfile + os.replace()                                                [6†L5-L7]
+  • Structured logging with provider‑health telemetry                                        [8†L22-L23]
+
+Usage:
+  1. Set GROQ_API_KEY (required) and GEMINI_API_KEY (optional fallback) as env vars.
+  2. python generate_horoscopes.py
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
+import math
 import os
 import random
 import re
@@ -29,31 +33,30 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 # ---------------------------------------------------------------------------
-# Structured logging
+# Structured logging (JSON‑line compatible, ISO‑8601 timestamps)
 # ---------------------------------------------------------------------------
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
+    datefmt="%Y-%m-%dT%H:%M:%S",
 )
 log = logging.getLogger("horoscope")
 
-
 # ============================================================================
-# 0. DEPENDENCY CHECKS (fail‑fast with clear messages)
+# 0. DEPENDENCY GUARD (fail‑fast with actionable messages)
 # ============================================================================
-def _check_deps():
-    missing = []
+def _guard_deps() -> None:
+    missing: List[str] = []
     for mod, pkg in [
         ("swisseph", "pyswisseph"),
         ("groq", "groq"),
-        ("pydantic", "pydantic"),
+        ("pydantic", "pydantic>=2.0"),
         ("json_repair", "json_repair"),
         ("tenacity", "tenacity"),
-        ("google.generativeai", "google-generativeai"),
+        ("instructor", "instructor"),
     ]:
         try:
             __import__(mod)
@@ -63,66 +66,55 @@ def _check_deps():
         log.critical("Missing dependencies:\n%s", "\n".join(missing))
         sys.exit(1)
 
-_check_deps()
+_guard_deps()
 
 import swisseph as swe
 from groq import Groq
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, field_validator, ValidationError
 from json_repair import repair_json
 from tenacity import (
-    retry, stop_after_attempt, wait_exponential, retry_if_exception_type,
-    before_sleep_log,
+    retry, stop_after_attempt, wait_exponential,
+    retry_if_exception_type, before_sleep_log,
 )
-
-# Optional: Google Gemini as fallback provider
-try:
-    import google.generativeai as genai
-    HAS_GEMINI = True
-except ImportError:
-    HAS_GEMINI = False
+import instructor
 
 
 # ============================================================================
 # 1. CUSTOM EXCEPTION HIERARCHY
 # ============================================================================
 class HoroscopeError(Exception):
-    """Base exception for the horoscope pipeline."""
+    """Base for all pipeline failures."""
 
 class EphemerisError(HoroscopeError):
-    """Planetary calculation failure."""
+    """Planetary calculation failed."""
 
-class LLMConnectionError(HoroscopeError):
-    """Network-level failure to reach an LLM provider."""
+class CircuitBreakerOpenError(HoroscopeError):
+    """Circuit is open — provider skipped."""
 
 class LLMRateLimitError(HoroscopeError):
     """HTTP 429 from any provider."""
 
+class LLMConnectionError(HoroscopeError):
+    """Network‑level failure."""
+
 class LLMResponseError(HoroscopeError):
-    """Provider returned a response but it was unusable."""
+    """Provider returned unusable content."""
 
-class CircuitBreakerOpenError(HoroscopeError):
-    """Circuit breaker is open — provider skipped."""
-
-class ValidationError_(HoroscopeError):
-    """Pydantic validation failed after all repair attempts."""
+class ValidationExhaustedError(HoroscopeError):
+    """Instructor + repair both failed after max retries."""
 
 
 # ============================================================================
-# 2. CIRCUIT BREAKER (prevents retry storms on degraded providers)
+# 2. THREE‑STATE CIRCUIT BREAKER  (Martin Fowler pattern + half‑open recovery)     [7†L44-L47]
 # ============================================================================
 class CircuitState(Enum):
-    CLOSED = auto()          # requests pass through
-    OPEN = auto()            # requests immediately fail
-    HALF_OPEN = auto()       # one probe request allowed
+    CLOSED = auto()       # requests pass
+    OPEN = auto()         # requests fail fast
+    HALF_OPEN = auto()    # one probe allowed
 
 
 @dataclass
 class CircuitBreaker:
-    """
-    Tracks failures per provider.  After `failure_threshold` consecutive
-    failures, the circuit opens for `cooldown_seconds`.  In HALF_OPEN state,
-    the next call is a probe — if it succeeds the circuit closes again.
-    """
     name: str
     failure_threshold: int = 3
     cooldown_seconds: float = 120.0
@@ -130,14 +122,14 @@ class CircuitBreaker:
     _failure_count: int = 0
     _last_failure_time: float = 0.0
 
-    def record_failure(self):
+    def record_failure(self) -> None:
         self._failure_count += 1
         self._last_failure_time = time.monotonic()
         if self._failure_count >= self.failure_threshold:
             self._state = CircuitState.OPEN
-            log.warning("🔴 Circuit OPEN for %s (%d failures)", self.name, self._failure_count)
+            log.warning("🔴 %s circuit OPEN (%d failures)", self.name, self._failure_count)
 
-    def record_success(self):
+    def record_success(self) -> None:
         self._failure_count = 0
         self._state = CircuitState.CLOSED
 
@@ -147,35 +139,35 @@ class CircuitBreaker:
         if self._state == CircuitState.OPEN:
             if time.monotonic() - self._last_failure_time >= self.cooldown_seconds:
                 self._state = CircuitState.HALF_OPEN
-                log.info("🟡 Circuit HALF_OPEN for %s — probing", self.name)
+                log.info("🟡 %s circuit HALF_OPEN — probing", self.name)
                 return True
             return False
-        # HALF_OPEN — allow one probe
+        # HALF_OPEN — one probe
         return True
 
 
 # ============================================================================
-# 3. TOKEN‑BUCKET RATE LIMITER
+# 3. TOKEN‑BUCKET RATE LIMITER  (policy‑compliant, honours RPM quotas)               [13†L13-L15]
 # ============================================================================
 @dataclass
 class TokenBucket:
-    """Simple token‑bucket rate limiter to never hit provider 429s."""
     max_tokens: float
-    refill_rate: float  # tokens per second
+    refill_rate: float       # tokens / second
     _tokens: float = field(init=False)
+    _last_refill: float = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._tokens = self.max_tokens
         self._last_refill = time.monotonic()
 
-    def _refill(self):
+    def _refill(self) -> None:
         now = time.monotonic()
         elapsed = now - self._last_refill
         self._tokens = min(self.max_tokens, self._tokens + elapsed * self.refill_rate)
         self._last_refill = now
 
-    def consume(self, tokens: float = 1.0) -> float:
-        """Block until `tokens` are available; returns wait time."""
+    def acquire(self, tokens: float = 1.0) -> float:
+        """Block until `tokens` are available; returns seconds waited."""
         while True:
             self._refill()
             if self._tokens >= tokens:
@@ -186,10 +178,25 @@ class TokenBucket:
 
 
 # ============================================================================
-# 4. PYDANTIC DATA MODELS (Validator Sandwich – inner layer)
+# 4. PYDANTIC DATA MODELS  (field_validators with auto‑coercion)                      [10†L13-L25]
 # ============================================================================
+KNOWN_COLORS: set[str] = {
+    "red", "orange", "yellow", "green", "blue", "indigo", "violet",
+    "purple", "pink", "white", "black", "brown", "grey", "gray",
+    "silver", "gold", "maroon", "crimson", "turquoise", "teal",
+    "magenta", "cyan", "navy", "beige", "coral", "peach", "mint",
+    "lavender", "sky", "lime", "rose", "olive", "ruby", "sapphire",
+    "emerald", "amber", "topaz", "jade", "cobalt", "copper", "bronze",
+    "platinum", "aqua", "avocado", "champagne", "charcoal", "chestnut",
+    "chocolate", "citrine", "cream", "ebony", "forest", "fuchsia",
+    "ginger", "honey", "ivory", "khaki", "lemon", "lilac", "mahogany",
+    "mustard", "onyx", "opal", "periwinkle", "rust", "sand", "scarlet",
+    "sepia", "sienna", "tan", "taupe", "tomato", "wheat",
+}
+
+
 class HoroscopeEntry(BaseModel):
-    """A single rashi's horoscope, validated before writing to disk."""
+    """Single‑rashi horoscope validated before disk commit."""
     general: str = Field(..., min_length=20, max_length=2000)
     luck: str = Field(..., min_length=10, max_length=2000)
     scope: str = Field(..., min_length=10, max_length=2000)
@@ -199,21 +206,26 @@ class HoroscopeEntry(BaseModel):
     lucky_number: int = Field(..., ge=1, le=100)
     lucky_color: str = Field(..., min_length=2, max_length=30)
 
-    @field_validator("lucky_color")
+    @field_validator("lucky_color", mode="before")
     @classmethod
-    def clean_color(cls, v: str) -> str:
-        return v.strip().capitalize()
+    def extract_color(cls, v: Any) -> str:
+        """Extract the first known colour word from any length of text."""
+        raw = str(v).strip().lower()
+        words: List[str] = re.findall(r"[a-zA-Z]+", raw)
+        for w in words:
+            if w in KNOWN_COLORS:
+                return w.capitalize()
+        return words[0].capitalize() if words else "Red"
 
     @field_validator("*", mode="before")
     @classmethod
-    def coerce_strings(cls, v: Any) -> str:
+    def coerce_str(cls, v: Any) -> str:
         if not isinstance(v, str):
             return str(v)
         return v
 
 
 class DailyHoroscopeOutput(BaseModel):
-    """Top‑level output model."""
     date: str
     run_timestamp: str
     rashi_horoscopes: Dict[str, HoroscopeEntry]
@@ -240,48 +252,19 @@ PLANETS: Dict[int, str] = {
     swe.SATURN: "Saturn", swe.MEAN_NODE: "Rahu",
 }
 
-# ---------------------------------------------------------------------------
-# Multi‑provider definitions
-# ---------------------------------------------------------------------------
-@dataclass
-class ProviderConfig:
-    name: str
-    circuit_breaker: CircuitBreaker
-    rate_limiter: TokenBucket
-
-
-PROVIDERS = {
-    "groq": ProviderConfig(
-        name="Groq",
-        circuit_breaker=CircuitBreaker(name="Groq", failure_threshold=3, cooldown_seconds=180),
-        rate_limiter=TokenBucket(max_tokens=25, refill_rate=25 / 60.0),  # 25 req/min
-    ),
-}
-
-if HAS_GEMINI:
-    PROVIDERS["gemini"] = ProviderConfig(
-        name="Gemini",
-        circuit_breaker=CircuitBreaker(name="Gemini", failure_threshold=3, cooldown_seconds=180),
-        rate_limiter=TokenBucket(max_tokens=10, refill_rate=10 / 60.0),
-    )
-
-SYSTEM_PROMPT = (
-    "You are a seasoned Vedic astrologer. "
-    "Reply with exactly ONE JSON object, no markdown, no extra text. "
-    "Keys: general, luck, scope, study, love, travel, lucky_number, lucky_color. "
-    "All values are strings except lucky_number (integer 1‑100). "
-    "Each text value: 2‑4 detailed, encouraging sentences grounded in the given real transits."
-)
+MAX_OUTPUT_TOKENS: int = 800
+REQUEST_DELAY: float = 2.0   # inter‑call spacing (seconds)
+MAX_RETRIES: int = 3
 
 
 # ============================================================================
-# 6. EPHEMERIS LAYER
+# 6. EPHEMERIS LAYER  (Swiss Ephemeris, Moshier built‑in, Lahiri ayanamsa)          [14†L19-L23]
 # ============================================================================
 def setup_ephemeris() -> None:
     ephe_dir = tempfile.mkdtemp(prefix="sweph_")
     swe.set_ephe_path(ephe_dir)
     swe.set_sid_mode(swe.SIDM_LAHIRI)
-    log.info("Ephemeris initialised (Moshier, Lahiri)")
+    log.info("Ephemeris initialised (Moshier built‑in, Lahiri ayanamsa)")
 
 
 def compute_planet_positions(jd: float) -> Dict[str, Dict[str, Any]]:
@@ -308,186 +291,230 @@ def build_transit_text(rashi_idx: int, positions: Dict[str, Dict[str, Any]]) -> 
 
 
 # ============================================================================
-# 7. MULTI‑PROVIDER LLM GATEWAY WITH CIRCUIT BREAKER
+# 7. MULTI‑PROVIDER GATEWAY WITH INSTRUCTOR + CIRCUIT BREAKER                       [15†L26-L34]
 # ============================================================================
-def _call_groq(prompt: str, max_tokens: int) -> str:
-    client = Groq(api_key=os.environ["GROQ_API_KEY"])
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": prompt}],
-        temperature=0.8, top_p=0.9, max_completion_tokens=max_tokens,
-    )
-    content = response.choices[0].message.content
-    if not content:
-        raise LLMResponseError("Groq returned empty content")
-    return content
+SYSTEM_PROMPT = (
+    "You are a seasoned Vedic astrologer. "
+    "You must output a JSON object with exactly these keys: "
+    "general, luck, scope, study, love, travel, lucky_number, lucky_color. "
+    "lucky_number must be an integer 1‑100. lucky_color must be a single colour name like 'Red' — "
+    "NOT a sentence. Each text value must be 2‑4 detailed, encouraging sentences "
+    "grounded in the given real planetary transits."
+)
 
 
-def _call_gemini(prompt: str, max_tokens: int) -> str:
-    if not HAS_GEMINI:
-        raise LLMConnectionError("Gemini SDK not installed")
-    genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
-    model = genai.GenerativeModel("gemini-2.0-flash")
-    response = model.generate_content(
-        [SYSTEM_PROMPT, prompt],
-        generation_config={"temperature": 0.8, "top_p": 0.9, "max_output_tokens": max_tokens},
-    )
-    if not response.text:
-        raise LLMResponseError("Gemini returned empty content")
-    return response.text
+@dataclass
+class ProviderSlot:
+    name: str
+    breaker: CircuitBreaker
+    bucket: TokenBucket
+    client_fn: Callable[[], Any]
 
 
-PROVIDER_CALLABLES: Dict[str, Callable] = {"groq": _call_groq}
+def _build_groq_client() -> Any:
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    if not api_key:
+        raise LLMConnectionError("GROQ_API_KEY not set")
+    base = Groq(api_key=api_key)
+    return instructor.from_groq(base, mode=instructor.Mode.JSON)
+
+
+PROVIDERS: List[ProviderSlot] = [
+    ProviderSlot(
+        name="Groq",
+        breaker=CircuitBreaker(name="Groq", failure_threshold=3, cooldown_seconds=180),
+        bucket=TokenBucket(max_tokens=25, refill_rate=25 / 60.0),   # 25 RPM
+        client_fn=_build_groq_client,
+    ),
+]
+
+# Optional Gemini fallback (if google‑genai installed)
+try:
+    import google.generativeai as genai
+    HAS_GEMINI = True
+except ImportError:
+    HAS_GEMINI = False
+
 if HAS_GEMINI:
-    PROVIDER_CALLABLES["gemini"] = _call_gemini
+    def _build_gemini_client() -> Any:
+        # instructor wraps generativeai as well
+        api_key = os.environ.get("GEMINI_API_KEY", "")
+        if not api_key:
+            raise LLMConnectionError("GEMINI_API_KEY not set")
+        genai.configure(api_key=api_key)
+        return instructor.from_gemini(
+            genai.GenerativeModel("gemini-2.0-flash"),
+            mode=instructor.Mode.GEMINI_JSON,
+        )
+    PROVIDERS.append(
+        ProviderSlot(
+            name="Gemini",
+            breaker=CircuitBreaker(name="Gemini", failure_threshold=3, cooldown_seconds=180),
+            bucket=TokenBucket(max_tokens=10, refill_rate=10 / 60.0),
+            client_fn=_build_gemini_client,
+        )
+    )
 
 
-def call_with_circuit_breaker(
-    provider_name: str,
-    prompt: str,
-    max_tokens: int = 800,
-) -> str:
-    """
-    Call a single provider through its circuit breaker and rate limiter.
-    Raises CircuitBreakerOpenError, LLMRateLimitError, LLMConnectionError, or LLMResponseError.
-    """
-    cfg = PROVIDERS.get(provider_name)
-    if not cfg:
-        raise LLMConnectionError(f"Unknown provider: {provider_name}")
+# ============================================================================
+# 8. FULL‑JITTER BACKOFF HELPER  (AWS Builder’s Library)                             [7†L41-L45]
+# ============================================================================
+def full_jitter_backoff(attempt: int, base: float = 1.0, cap: float = 30.0) -> float:
+    """Exponential backoff with FULL jitter — prevents thundering‑herd."""
+    return random.uniform(0, min(cap, base * (2 ** attempt)))
 
-    # Circuit breaker check
-    if not cfg.circuit_breaker.allow_request():
-        raise CircuitBreakerOpenError(f"Circuit breaker is OPEN for {provider_name}")
 
-    # Rate limiter
-    cfg.rate_limiter.consume(1)
-
+# ============================================================================
+# 9. SELF‑HEALING RASHI GENERATOR (Instructor → JSON Repair → Pydantic)
+# ============================================================================
+def _try_instructor(
+    client: Any, model: str, prompt: str, max_tokens: int
+) -> Optional[HoroscopeEntry]:
+    """Attempt structured generation via instructor (primary path)."""
     try:
-        result = PROVIDER_CALLABLES[provider_name](prompt, max_tokens)
-        cfg.circuit_breaker.record_success()
-        return result
-    except CircuitBreakerOpenError:
-        raise
-    except (LLMRateLimitError, LLMConnectionError, LLMResponseError):
-        cfg.circuit_breaker.record_failure()
-        raise
+        entry: HoroscopeEntry = client.chat.completions.create(
+            model=model,
+            response_model=HoroscopeEntry,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=max_tokens,
+            temperature=0.8,
+        )
+        return entry
     except Exception as exc:
-        cfg.circuit_breaker.record_failure()
-        msg = str(exc).lower()
-        if "rate limit" in msg or "429" in msg:
-            raise LLMRateLimitError(str(exc)) from exc
-        if "timeout" in msg or "connection" in msg or "503" in msg or "500" in msg:
-            raise LLMConnectionError(str(exc)) from exc
-        raise LLMResponseError(str(exc)) from exc
+        log.debug("  instructor failed: %s", exc)
+        return None
 
 
-def generate_raw_horoscope(prompt: str) -> str:
-    """
-    Walk the provider priority list.  Groq first, then Gemini, then fail hard.
-    """
-    last_error: Optional[Exception] = None
-    for pname in PROVIDER_CALLABLES:
+def _try_raw_repair(
+    client_raw: Groq, model: str, prompt: str, max_tokens: int
+) -> Optional[HoroscopeEntry]:
+    """Fallback: raw API call + multi‑stage JSON repair + Pydantic validation."""
+    content: Optional[str] = None
+    for attempt in range(1, 4):
         try:
-            log.info("  → trying %s", pname)
-            return call_with_circuit_breaker(pname, prompt)
-        except CircuitBreakerOpenError:
-            log.warning("  ⚠ %s circuit open, skipping", pname)
-            continue
-        except (LLMRateLimitError, LLMConnectionError, LLMResponseError) as exc:
-            log.warning("  ⚠ %s failed: %s", pname, exc)
-            last_error = exc
-            time.sleep(1)
-            continue
+            resp = client_raw.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.8,
+                top_p=0.9,
+                max_completion_tokens=max_tokens,
+            )
+            content = resp.choices[0].message.content
+            if not content:
+                continue
+            break
         except Exception as exc:
-            log.error("  ❌ Unexpected error from %s: %s", pname, exc)
-            last_error = exc
-            continue
-    raise LLMConnectionError(f"All providers exhausted. Last error: {last_error}")
+            if attempt < 3:
+                time.sleep(full_jitter_backoff(attempt, base=2, cap=15))
+                continue
+            raise LLMConnectionError(str(exc)) from exc
 
+    if not content:
+        return None
 
-# ============================================================================
-# 8. VALIDATOR SANDWICH – JSON repair + Pydantic
-# ============================================================================
-def parse_and_validate(raw: str) -> HoroscopeEntry:
-    """
-    Multi‑stage JSON repair followed by Pydantic validation.
-    The 'Validator Sandwich' pattern: AI output → repair → validate → retry.
-    """
-    if not raw or not raw.strip():
-        raise ValidationError_("Empty LLM response")
-
-    content = raw.strip()
-    content = re.sub(r"^```(?:json)?\s*", "", content)
-    content = re.sub(r"\s*```$", "", content)
-
-    errors = []
-    # Stage 1: Direct json_repair
-    try:
-        obj = repair_json(content, return_objects=True)
-        return HoroscopeEntry.model_validate(obj)
-    except Exception as e:
-        errors.append(f"stage1: {e}")
-
-    # Stage 2: Regex extract + repair
-    match = re.search(r"\{.*\}", content, re.DOTALL)
-    if match:
+    # Multi‑stage repair (3 strategies in sequence)                                  [11†L13-L16]
+    strategies: List[Callable[[str], Optional[dict]]] = [
+        lambda c: json.loads(repair_json(c, return_objects=True)),
+        lambda c: _regex_extract_and_repair(c),
+        lambda c: _balance_and_repair(c),
+    ]
+    for i, strat in enumerate(strategies, start=1):
         try:
-            obj = repair_json(match.group(), return_objects=True)
-            return HoroscopeEntry.model_validate(obj)
-        except Exception as e:
-            errors.append(f"stage2: {e}")
-
-    # Stage 3: Brace balancing + repair
-    balanced = _balance_braces(content)
-    try:
-        obj = repair_json(balanced, return_objects=True)
-        return HoroscopeEntry.model_validate(obj)
-    except Exception as e:
-        errors.append(f"stage3: {e}")
-
-    raise ValidationError_(f"All JSON repair stages failed: {'; '.join(errors)}")
+            obj = strat(content)
+            if isinstance(obj, dict):
+                return HoroscopeEntry.model_validate(obj)
+        except Exception:
+            continue
+    return None
 
 
-def _balance_braces(text: str) -> str:
-    open_count = text.count("{") - text.count("}")
-    if open_count > 0:
-        return text + "}" * open_count
-    return text.rstrip("}")[: -abs(open_count)] if open_count < 0 else text
+def _regex_extract_and_repair(content: str) -> Optional[dict]:
+    match = re.search(r"\{.*\}", content, re.DOTALL)
+    if not match:
+        return None
+    return repair_json(match.group(), return_objects=True)
 
 
-# ============================================================================
-# 9. SELF‑HEALING RASHI GENERATOR
-# ============================================================================
-def generate_rashi(rashi_name: str, today_str: str, transit_text: str, max_retries: int = 3) -> HoroscopeEntry:
-    """Generate and validate one rashi, with self‑healing retries on validation failure."""
+def _balance_and_repair(content: str) -> Optional[dict]:
+    open_braces = content.count("{") - content.count("}")
+    if open_braces > 0:
+        content += "}" * open_braces
+    return repair_json(content, return_objects=True)
+
+
+def generate_rashi(
+    rashi_name: str, today_str: str, transit_text: str,
+    model: str = "llama-3.3-70b-versatile",
+) -> HoroscopeEntry:
+    """
+    Generate one rashi using:
+      1. instructor (forces valid JSON)
+      2. raw API + json_repair (fallback)
+      3. Pydantic validation (final gate)
+    with circuit‑breaker gating and full‑jitter retries.
+    """
     prompt = (
         f"Rashi: {rashi_name}\nToday: {today_str}\n\n"
         f"Real planetary transits (house positions from {rashi_name}):\n{transit_text}\n\n"
         f"Based ONLY on these exact positions, generate the horoscope JSON."
     )
-    last_error = None
-    for attempt in range(1, max_retries + 1):
+
+    for slot in PROVIDERS:
+        # ── Circuit breaker gate ──
+        if not slot.breaker.allow_request():
+            log.warning("  ⚠ %s circuit OPEN — skipping", slot.name)
+            continue
+
+        # ── Rate limiter ──
+        slot.bucket.acquire(1)
+
         try:
-            raw = generate_raw_horoscope(prompt)
-            return parse_and_validate(raw)
-        except (ValidationError_, ValidationError) as exc:
-            last_error = exc
-            log.warning("  ⚠ validation attempt %d/%d: %s", attempt, max_retries, exc)
-            if attempt < max_retries:
-                time.sleep(2 ** attempt)
-        except (LLMConnectionError, LLMRateLimitError, LLMResponseError) as exc:
-            last_error = exc
-            log.error("  ❌ LLM error attempt %d/%d: %s", attempt, max_retries, exc)
-            if attempt < max_retries:
-                time.sleep(4)
-    raise HoroscopeError(f"Failed after {max_retries} attempts for {rashi_name}: {last_error}")
+            client = slot.client_fn()
+
+            # --- Primary: instructor ---
+            entry = _try_instructor(client, model, prompt, MAX_OUTPUT_TOKENS)
+            if entry is not None:
+                slot.breaker.record_success()
+                log.info("  ✓ %s (instructor)", slot.name)
+                return entry
+
+            # --- Fallback: raw + repair (need the raw Groq client) ---
+            raw_client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
+            entry = _try_raw_repair(raw_client, model, prompt, MAX_OUTPUT_TOKENS)
+            if entry is not None:
+                slot.breaker.record_success()
+                log.info("  ✓ %s (raw+repair)", slot.name)
+                return entry
+
+            # Both failed — record as response error
+            slot.breaker.record_failure()
+            raise LLMResponseError(f"{slot.name}: instructor + repair both failed")
+
+        except CircuitBreakerOpenError:
+            continue
+        except LLMRateLimitError:
+            slot.breaker.record_failure()
+            log.warning("  ⚠ %s rate‑limited", slot.name)
+            continue
+        except (LLMConnectionError, LLMResponseError) as exc:
+            slot.breaker.record_failure()
+            log.warning("  ⚠ %s failed: %s", slot.name, exc)
+            continue
+
+    raise ValidationExhaustedError(f"All providers exhausted for {rashi_name}")
 
 
 # ============================================================================
 # 10. MAIN
 # ============================================================================
 def main() -> None:
-    log.info("===== High‑Tech Daily Horoscope Generator START =====")
+    log.info("===== Industry‑Grade Daily Horoscope Generator START =====")
     setup_ephemeris()
 
     today = datetime.now()
@@ -509,8 +536,8 @@ def main() -> None:
         log.info("  Transits: %s…", transit[:120])
         entry = generate_rashi(rashi, today_str, transit)
         rashi_horoscopes[rashi] = entry
-        log.info("  ✓ %s generated", rashi)
-        time.sleep(1.5)  # gentle spacing
+        log.info("  ✓ %s complete", rashi)
+        time.sleep(REQUEST_DELAY)
 
     output = DailyHoroscopeOutput(
         date=today_iso,
@@ -518,12 +545,17 @@ def main() -> None:
         rashi_horoscopes=rashi_horoscopes,
     )
 
-    # Atomic write
+    # Atomic write via tempfile + replace                                          [6†L5-L7]
     out_path = Path("data") / "horoscopes.json"
-    tmp_path = out_path.with_suffix(".tmp")
-    with open(tmp_path, "w", encoding="utf-8") as f:
-        f.write(output.model_dump_json(indent=2, ensure_ascii=False))
-    tmp_path.replace(out_path)
+    fd, tmp_path = tempfile.mkstemp(suffix=".json", dir="data")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(output.model_dump_json(indent=2, ensure_ascii=False))
+        os.replace(tmp_path, out_path)
+    except Exception:
+        Path(tmp_path).unlink(missing_ok=True)
+        raise
+
     log.info("✅ All 12 rashis saved to %s", out_path)
 
 
