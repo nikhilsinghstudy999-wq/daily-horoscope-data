@@ -1,26 +1,21 @@
-# .github/workflows/daily-horoscope.yml
-name: "Daily Horoscope Generation (SambaNova)"
+name: "Daily Horoscope Generation (Multi‑Provider)"
 
 on:
   schedule:
-    # Two runs to ensure the day’s data is always generated,
-    # even if the first run is delayed or fails.
-    # Times are UTC: 00:30 = 6:00 AM IST, 12:30 = 6:00 PM IST
     - cron: '30 0 * * *'
     - cron: '30 12 * * *'
-  workflow_dispatch:   # Manual trigger for testing / emergency
+  workflow_dispatch:
 
 concurrency:
-  group: horoscope-gen
-  # Queue subsequent runs instead of cancelling – guarantees each finishes
+  group: horoscope-generation
   cancel-in-progress: false
 
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15          # Kill if stuck
+    timeout-minutes: 15
     permissions:
-      contents: write            # Needed to push updated JSON
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,7 +23,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Cache pip packages
         uses: actions/cache@v4
@@ -43,7 +38,8 @@ jobs:
 
       - name: Generate horoscopes
         env:
-          SAMBANOVA_API_KEY: ${{ secrets.SAMBANOVA_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python generate_horoscopes.py
 
       - name: Validate generated JSON
@@ -55,7 +51,7 @@ jobs:
           required = ['date','run_timestamp','rashi_horoscopes']
           assert all(k in data for k in required), 'Missing top-level keys'
           assert len(data['rashi_horoscopes']) == 12, 'Not all 12 rashis present'
-          print('JSON validation passed')
+          print('✓ JSON validation passed')
           "
 
       - name: Commit and push updated data
@@ -63,6 +59,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/horoscopes.json
-          # Only commit if something changed (handy even if run_timestamp ensures change)
           git diff --staged --quiet || git commit -m "Update daily horoscopes $(date +%Y-%m-%d)"
           git push
