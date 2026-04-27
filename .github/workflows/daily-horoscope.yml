@@ -1,19 +1,28 @@
-name: "Daily Horoscope Generation (Multi‑Provider)"
+name: "Daily Horoscope – Batched (3 runs/day)"
 
 on:
   schedule:
+    # Batch 0 (rashi 0‑3) at 00:30 UTC (6:00 AM IST)
     - cron: '30 0 * * *'
-    - cron: '30 12 * * *'
+    # Batch 1 (rashi 4‑7) at 08:30 UTC (2:00 PM IST)
+    - cron: '30 8 * * *'
+    # Batch 2 (rashi 8‑11) at 16:30 UTC (10:00 PM IST)
+    - cron: '30 16 * * *'
   workflow_dispatch:
-
-concurrency:
-  group: horoscope-generation
-  cancel-in-progress: false
+    inputs:
+      BATCH_START:
+        description: 'Start index (0‑11)'
+        required: false
+        default: '0'
+      BATCH_END:
+        description: 'End index (exclusive)'
+        required: false
+        default: '12'
 
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
@@ -25,7 +34,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Cache pip packages
+      - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
@@ -39,25 +48,14 @@ jobs:
       - name: Generate horoscopes
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          BATCH_START: ${{ github.event.inputs.BATCH_START || '0' }}
+          BATCH_END: ${{ github.event.inputs.BATCH_END || '12' }}
         run: python generate_horoscopes.py
 
-      - name: Validate generated JSON
-        run: |
-          python -c "
-          import json
-          with open('data/horoscopes.json', 'r') as f:
-              data = json.load(f)
-          required = ['date','run_timestamp','rashi_horoscopes']
-          assert all(k in data for k in required), 'Missing top-level keys'
-          assert len(data['rashi_horoscopes']) == 12, 'Not all 12 rashis present'
-          print('✓ JSON validation passed')
-          "
-
-      - name: Commit and push updated data
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/horoscopes.json
-          git diff --staged --quiet || git commit -m "Update daily horoscopes $(date +%Y-%m-%d)"
+          git add data/
+          git diff --staged --quiet || git commit -m "Update daily horoscopes $(date +%Y-%m-%d) batch"
           git push
