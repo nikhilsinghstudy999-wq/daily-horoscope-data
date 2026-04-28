@@ -2,7 +2,7 @@ name: "Horoscope Batch 0 (Mesh – Karka)"
 
 on:
   schedule:
-    - cron: '30 0 * * *'
+    - cron: '30 18 * * *'   # 12:00 AM IST
   workflow_dispatch:
 
 jobs:
