@@ -1,8 +1,8 @@
-name: "Horoscope Batch 2 (Vrischika – Meena)"
+name: "Horoscope Batch 2 (Vrishchika – Meena)"
 
 on:
   schedule:
-    - cron: '30 16 * * *'
+    - cron: '30 20 * * *'   # 2:00 AM IST
   workflow_dispatch:
 
 jobs:
@@ -33,5 +33,5 @@ jobs:
           git config user.name "bot"
           git config user.email "bot@github.com"
           git add data/
-          git diff --staged --quiet || git commit -m "Batch 2: Vrischika‑Meena $(date +%Y-%m-%d)"
+          git diff --staged --quiet || git commit -m "Batch 2: Vrishchika‑Meena $(date +%Y-%m-%d)"
           git push
