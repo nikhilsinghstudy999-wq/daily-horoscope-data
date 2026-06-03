@@ -1,45 +1,45 @@
 {
-  "date": "2026-06-02T22:35:11.214276",
-  "run_timestamp": "2026-06-02T22:35:48.478716+00:00",
+  "date": "2026-06-03T21:35:01.524205",
+  "run_timestamp": "2026-06-03T21:35:38.490226+00:00",
   "rashi_horoscopes": {
-    "Dhanu (Sagittarius)": {
-      "general": "Today, the energies of Dhanu (Sagittarius) Rashi are supported by the Moon, but the intensity of Mars in house 5 may cause restlessness and impulsive decisions. Be cautious of sudden outbursts and maintain emotional balance. As Sun in house 6 challenges your daily routines, focus on adapting to changing circumstances.",
-      "luck": "The transit of Rahu in house 3 may bring unexpected opportunities and luck, but be cautious of misusing this energy for personal gain. Jupiter in house 8 can also bring fortunate circumstances, especially related to long-term investments or relationships.",
-      "scope": "With Mercury in house 7, your communication skills are effective in negotiations and partnerships. However, be aware of the potential for miscommunication and make an effort to clarify your intentions. This is an excellent time to explore new business or creative collaborations.",
-      "study": "Mars in house 5 can energize your learning process and help you stay focused, but avoid overexertion. The placement of Jupiter in house 8 indicates that your efforts in education or personal development will have long-term benefits.",
-      "love": "The presence of Venus in house 7 indicates a harmonious connection with your partner, but the influence of Rahu in house 3 may bring unexpected twists or surprises. Focus on maintaining open communication and trust to navigate any challenges.",
-      "travel": "With Ketu in house 9, you may feel the urge to break free from routine and explore new horizons. This transit is ideal for spiritual or cultural journeys, but be cautious of getting stuck in a rut or feeling disconnected from your roots.",
+    "Mesha (Aries)": {
+      "general": "The Sun's presence in the 2nd house of Taurus indicates a focus on material security and finances, which could be a driving force behind your decisions today. However, Mars in the 1st house of Aries suggests a need for independence and assertiveness, which may lead to conflicts with others. With the Moon in the 9th house of Sagittarius, you may feel restless and seek expansion, adventure, or higher learning opportunities.",
+      "luck": "Your luck is influenced by the current planetary transits, with Jupiter in the 4th house of Cancer indicating a period of growth and positivity in your domestic and family life. The presence of Rahu in the 11th house of Aquarius suggests unexpected opportunities and surprises, but also caution is advised to avoid taking unnecessary risks.",
+      "scope": "With Mercury in the 3rd house of Gemini and Venus in the same house, your communication and relationships skills are being put to the test. This could be a challenging time for expressing yourself effectively, but also an opportunity for growth and improvement. The 3rd house is also associated with short-distance travel, so you may be taking a local trip or engaging in a similar activity.",
+      "study": "The presence of Mercury in the 3rd house of Gemini indicates a need to stay curious and adaptable in your learning pursuits. You may need to be more flexible and open to new ideas, but this could also lead to a deeper understanding and appreciation of the subject matter. The Moon in the 9th house of Sagittarius suggests a desire for higher learning and expansion, which could be fulfilled through your studies.",
+      "love": "The presence of Venus in the 3rd house of Gemini suggests a strong connection with your partner through communication and shared interests. However, the Moon in the 9th house of Sagittarius may indicate a desire for independence and freedom, which could create tension in your relationship. With Mars in the 1st house of Aries, you may feel a strong need for assertiveness and expression in your love life.",
+      "travel": "With the Moon in the 9th house of Sagittarius, you may feel a strong desire for travel and exploration. The presence of Rahu in the 11th house of Aquarius suggests unexpected opportunities for travel or adventure, but also caution is advised to avoid taking unnecessary risks. The 9th house is also associated with long-distance travel, so you may be planning a trip or engaging in a similar activity.",
+      "lucky_number": 63,
+      "lucky_color": "Green"
+    },
+    "Vrishabha (Taurus)": {
+      "general": "As the Sun is in the 1st house, expect a boost in confidence and energy, but also be cautious of pride and ego. With Mars in the 12th house, your emotional and spiritual well-being may be a priority, but also be aware of potential impulsiveness. The Moon in the 8th house may bring a sense of mystery and intuition, but also a need for emotional security.",
+      "luck": "Your luck may be influenced by the presence of Rahu in the 10th house, which could bring opportunities for recognition and advancement, but also a sense of restlessness and unpredictability.",
+      "scope": "The current transits suggest a focus on personal growth, emotional healing, and spiritual development. With Jupiter in the 3rd house, communication and networking may be key areas of focus.",
+      "study": "The placement of Mercury in the 2nd house and Venus in the 2nd house may suggest a strong connection to learning and knowledge, and a potential focus on personal finances and values.",
+      "love": "With the Moon in the 8th house, your emotional connections may be intense and mysterious, but also potentially unstable. Be cautious of secrets and hidden emotions.",
+      "travel": "The placement of Saturn in the 11th house may suggest a need for patience and discipline in travel and exploration, but also a potential for long-distance connections and friendships.",
+      "lucky_number": 67,
+      "lucky_color": "Turquoise"
+    },
+    "Mithuna (Gemini)": {
+      "general": "Be cautious of taking unnecessary risks today due to the presence of Mars in the 11th house, which may prompt impulsive decisions. The influence of Jupiter in the 2nd house can bring some financial benefits, but it's essential to be mindful of overspending. A sense of restlessness may be felt due to the Moon's position in the 7th house.",
+      "luck": "Your luck may take a turn for the better with the Moon's presence in the 7th house, bringing opportunities for personal growth and expansion. However, the presence of Saturn in the 10th house can create obstacles that need to be overcome.",
+      "scope": "The 11th house's Mars can expand your scope of action, but it's crucial to stay focused and avoid distractions. The 2nd house's Jupiter can increase your confidence in financial matters, but don't let it cloud your judgment.",
+      "study": "Mercury's position in the 1st house can improve your communication skills and ability to express yourself effectively. However, it's essential to stay organized and focused to make the most of this opportunity.",
+      "love": "The 7th house's Moon can create a strong emotional connection with your partner, but be aware of the influence of Rahu in the 9th house, which may lead to misunderstandings or conflicts.",
+      "travel": "The 9th house's Rahu can indicate a need for travel or exploration, but be cautious of taking unnecessary risks or getting too caught up in new experiences.",
+      "lucky_number": 56,
+      "lucky_color": "Yellow"
+    },
+    "Karka (Cancer)": {
+      "general": "As Sun in 11th house indicates success and recognition, this period might bring you accolades in your career. However, Moon in 6th house suggests health concerns, so take necessary precautions. Jupiter's placement in 1st house, being in its own sign, blesses you with good fortune and a positive outlook.",
+      "luck": "Your luck is influenced by Rahu in 8th house, which may bring unexpected gains but also involves some risk. Be cautious in your financial dealings and avoid speculative investments.",
+      "scope": "The current transits indicate that you should focus on your career and professional growth. Mars in 10th house supports your ambitions and hard work. However, Mercury's placement in 12th house may cause delays or misunderstandings, so stay patient and communicative.",
+      "study": "Saturn in 9th house might create challenges in your educational pursuits, but it's an opportunity to develop discipline and perseverance. Venus' placement in 12th house indicates a need for self-study and reflection.",
+      "love": "The transits suggest that your love life is stable, but there might be a sense of emotional detachment. Moon in 6th house could indicate health concerns in your relationship or a need for more emotional support.",
+      "travel": "Jupiter's placement in 1st house indicates a positive and adventurous travel experience. However, Rahu in 8th house may cause some unexpected events or delays during your journey.",
       "lucky_number": 42,
-      "lucky_color": "Turquoise"
-    },
-    "Makara (Capricorn)": {
-      "general": "Today, your energies are focused on stability and routine, with a hint of tension in your personal space. With Mars in Aries, you may feel restless and impulsive, but Saturn in Pisces suggests caution and patience. This is a good time to focus on your finances and plan for the future.",
-      "luck": "Your luck is influenced by the position of the Moon in Sagittarius, which can bring good fortune in travel and exploration. However, with Rahu in Aquarius, be cautious of unexpected expenses or financial surprises.",
-      "scope": "With Jupiter in Cancer, your scope of influence is expanding, and you may have opportunities to connect with others on a deeper level. However, Mercury in Gemini suggests that communication may be a challenge, so be patient and clear in your expression.",
-      "study": "Mars in Aries and Mercury in Gemini can bring a sense of excitement and curiosity to your studies, but Saturn in Pisces suggests that you may need to focus on the practical applications of your knowledge. Be disciplined and persistent in your efforts.",
-      "love": "Venus in Gemini can bring a sense of lightness and playfulness to your relationships, but the Moon in Sagittarius suggests that you may be feeling a little restless and independent. Be open to new experiences and connections, but also prioritize your own needs and desires.",
-      "travel": "The position of the Moon in Sagittarius and Jupiter in Cancer suggests that travel and exploration are on the horizon. With Rahu in Aquarius, be prepared for unexpected twists and turns, but also be open to new adventures and opportunities.",
-      "lucky_number": 43,
-      "lucky_color": "Sapphire"
-    },
-    "Kumbha (Aquarius)": {
-      "general": "Today, with the Sun in Taurus, you might feel a sense of stability and grounding in your personal life. However, the Moon in Sagittarius in the 11th house suggests that your mind is focused on higher knowledge and exploration, which could lead to restlessness and a desire for expansion. The presence of Mars in Aries in the 3rd house indicates that your communication and daily interactions might be impulsive and energetic.",
-      "luck": "You may experience a mix of good and bad luck today, with the unpredictable nature of the transits. However, with the right approach, you can harness the positive energies and navigate the challenges. Focus on your personal growth and learning to unlock your full potential.",
-      "scope": "Your personal growth and learning are likely to be the primary focus areas for you today. The presence of Jupiter in Cancer in the 6th house indicates that you're on a path of self-improvement and healing. This is a great opportunity to cultivate emotional intelligence and develop a deeper connection with yourself.",
-      "study": "The transits suggest that you're in a period of intense mental activity and learning. With Mercury in Gemini in the 5th house, you're likely to be highly curious and enthusiastic about exploring new ideas and subjects. Take advantage of this energy to learn new skills and expand your knowledge.",
-      "love": "The presence of Venus in Gemini in the 5th house indicates that you're in a phase of intellectual and romantic connections. You might be drawn to someone who shares your love for learning and exploration. However, the Moon in Sagittarius in the 11th house suggests that you might be feeling restless and uncertain about commitment.",
-      "travel": "With the Moon in Sagittarius in the 11th house, you might feel an urge to travel and explore new places. However, the presence of Saturn in Pisces in the 2nd house indicates that you might be facing some financial constraints or uncertainty about your resources. Plan your travels carefully and consider your budget.",
-      "lucky_number": 43,
-      "lucky_color": "Turquoise"
-    },
-    "Meena (Pisces)": {
-      "general": "Your current planetary transits indicate a focus on self-reinvention and independence, with the Sun in Taurus illuminating your communication and personal growth, and Saturn in Pisces anchoring you in your roots and foundation. However, Mars in Aries in your 2nd house may bring a sense of restlessness and impulsiveness in your finances and material possessions. Overall, this transit is urging you to strike a balance between stability and growth.",
-      "luck": "The current transits suggest that your luck is tied to your ability to navigate your emotions and relationships, with the Moon in Sagittarius in your 10th house influencing your public image and reputation. This is a good time to focus on building your self-confidence and taking calculated risks. However, be mindful of the influence of Rahu in Aquarius in your 12th house, which may bring uncertainty and unpredictability in your spiritual and emotional life.",
-      "scope": "Your current scope of influence is expanding, with Jupiter in Cancer in your 5th house bringing opportunities for growth and expansion in your creative pursuits and children. However, Mercury in Gemini in your 4th house may bring a sense of restlessness and change in your home and family life. This transit is urging you to be adaptable and open to new ideas and perspectives.",
-      "study": "The current transits suggest that your study and learning are focused on self-improvement and personal growth, with the Sun in Taurus in your 3rd house influencing your communication and expression. This is a good time to focus on building your self-confidence and developing your skills and talents. However, be mindful of the influence of Mars in Aries in your 2nd house, which may bring a sense of impulsiveness and restlessness in your learning and study.",
-      "love": "The current transits suggest that your love life is focused on building intimacy and connection with others, with Venus in Gemini in your 4th house influencing your home and family life. This is a good time to focus on building your relationships and nurturing your emotional connections with others. However, be mindful of the influence of Rahu in Aquarius in your 12th house, which may bring uncertainty and unpredictability in your romantic relationships.",
-      "travel": "The current transits suggest that your travel and exploration are focused on expanding your horizons and exploring new possibilities, with Jupiter in Cancer in your 5th house bringing opportunities for growth and expansion in your creative pursuits and children. However, Mercury in Gemini in your 4th house may bring a sense of restlessness and change in your home and family life. This transit is urging you to be adaptable and open to new ideas and perspectives.",
-      "lucky_number": 43,
       "lucky_color": "Turquoise"
     }
   }
