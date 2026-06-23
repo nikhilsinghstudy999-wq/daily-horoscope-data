@@ -1,45 +1,45 @@
 {
-  "date": "2026-06-23T20:31:21.370472",
-  "run_timestamp": "2026-06-23T20:31:57.065531+00:00",
+  "date": "2026-06-23T21:10:45.707836",
+  "run_timestamp": "2026-06-23T21:11:22.329224+00:00",
   "rashi_horoscopes": {
-    "Mesha (Aries)": {
-      "general": "The day is expected to bring a mix of emotions as the Moon in Virgo is in a tense relationship with the Sun in Gemini, leading to mental restlessness and a sense of frustration. However, with Mercury, Jupiter, and Venus all in Cancer, there's a strong focus on emotional stability and nurturing relationships. This balance can help mitigate the stress and anxiety caused by the Moon's placement in Virgo.",
-      "luck": "With Rahu in Aquarius and Ketu in Leo, there's a chance of sudden opportunities or events that can bring good fortune, but also a risk of being caught off guard. It's essential to be prepared and adaptable to make the most of these situations.",
-      "scope": "Today's transits suggest that the scope of your actions and decisions should be focused on your emotional well-being and relationships. With the emphasis on Cancer, prioritize self-care and nurturing activities that bring you comfort and joy.",
-      "study": "The Moon in Virgo and the Sun in Gemini indicate that you may feel mentally overworked or scattered, making it challenging to focus on your studies. However, the presence of Jupiter and Venus in Cancer suggests that you can tap into your emotional intelligence and creativity to find new approaches to learning.",
-      "love": "With the emphasis on Cancer and the nurturing energies of Mercury, Jupiter, and Venus, it's an excellent day to focus on emotional intimacy and connection with your loved ones. Be open to sharing your feelings and listening to theirs, and you may find that your relationships deepen and become more fulfilling.",
-      "travel": "The transits indicate that you may feel restless or inclined to take a spontaneous trip, but it's essential to be cautious and plan carefully. Rahu's presence in Aquarius suggests that you may encounter unexpected obstacles or challenges on your journey.",
+    "Simha (Leo)": {
+      "general": "Today, you may feel a mix of energy and restlessness due to the Sun in Gemini and the Moon in Virgo, which could lead to increased productivity but also potential anxiety. Your emotions may be influenced by your surroundings, and you might feel the need to communicate your thoughts effectively. Be cautious of overthinking and try to maintain a balance between action and reflection.",
+      "luck": "The transits indicate that your luck may be influenced by the current planetary positions, with Rahu in Aquarius and Ketu in Leo. This could lead to unexpected opportunities or challenges, especially related to your partnerships and friendships. Be prepared to adapt to changing circumstances and stay open to new possibilities.",
+      "scope": "The Jupiter-Venus conjunction in Cancer suggests that your scope may be expanded in areas related to emotional connection, relationships, and personal growth. You may feel a sense of security and stability, which could lead to increased confidence and a stronger sense of self. Focus on nurturing your relationships and emotional well-being.",
+      "study": "The Mercury-Jupiter conjunction in Cancer indicates that your study and learning may be influenced by your emotional connection to the subject matter. You may feel more empathetic and intuitive, which could lead to a deeper understanding of complex concepts. Be patient and allow yourself to absorb information at your own pace.",
+      "love": "The Venus-Jupiter conjunction in Cancer suggests that your love life may be filled with warmth, security, and emotional connection. You may feel a strong desire for intimacy and closeness, which could lead to deeper and more meaningful relationships. Focus on building trust and communication with your partner.",
+      "travel": "The Mars in Taurus suggests that your travel plans may be influenced by your desire for stability and security. You may feel more grounded and practical, which could lead to a more enjoyable and relaxing travel experience. Focus on exploring new places and experiencing different cultures.",
       "lucky_number": 42,
+      "lucky_color": "Golden"
+    },
+    "Kanya (Virgo)": {
+      "general": "You are likely to experience a mix of positive and negative energies today, with your mental clarity and focus being put to the test as the Sun in Gemini illuminates your 10th house, while the Moon in Virgo grounds you in your 1st house. This may lead to feelings of restlessness and a desire for change, but also a strong sense of determination and willpower.",
+      "luck": "Your luck is likely to be average today, with the planetary transits not providing a clear advantage or disadvantage. However, with the Moon in your 1st house, you may feel more grounded and stable, which can help you navigate any challenges that come your way.",
+      "scope": "Your scope for personal growth and development is likely to be limited today, with the Sun in Gemini and the Moon in Virgo not providing a strong emphasis on spiritual or philosophical pursuits. However, you may still be able to learn and grow through your interactions with others and your experiences in the world around you.",
+      "study": "You may find it challenging to focus on your studies today, with the Sun in Gemini and the Moon in Virgo creating a sense of mental restlessness and a desire for change. However, you may still be able to make progress through your hard work and determination.",
+      "love": "Your love life is likely to be influenced by your interactions with others, with the Sun in Gemini and the Moon in Virgo creating a sense of emotional ups and downs. You may feel more connected to your partner or loved ones today, but also more prone to mood swings and emotional turmoil.",
+      "travel": "You may feel a strong desire to travel or explore new places today, with the Sun in Gemini and the Moon in Virgo creating a sense of restlessness and a desire for change. However, this may also be a challenging time for travel, with the Moon in Virgo creating a sense of caution and practicality.",
+      "lucky_number": 53,
       "lucky_color": "Turquoise"
     },
-    "Vrishabha (Taurus)": {
-      "general": "You will experience a mix of energies today with the Sun in Gemini and Moon in Virgo. Mars in Taurus gives you a boost of confidence, while Mercury and Jupiter in Cancer emphasize communication and growth. This may lead to a busy and mentally active day.",
-      "luck": "The planetary positions suggest that your luck is on the rise, particularly in your professional life. Mars in the 1st house indicates a strong sense of purpose, and the presence of Jupiter and Venus in the 3rd house supports your communication and networking efforts.",
-      "scope": "Your current scope is focused on personal growth, communication, and professional development. The Cancer energies emphasize the importance of nurturing and self-care, while the Gemini influence suggests a need for adaptability and versatility.",
-      "study": "The planetary positions indicate that you will experience a boost in your learning abilities, particularly in subjects related to communication, social sciences, and the arts. Mercury and Jupiter in Cancer support your creativity and analytical skills.",
-      "love": "The presence of Venus in the 3rd house suggests that your relationships are likely to be focused on emotional connection and mutual support. However, the Virgo Moon in the 5th house may indicate some emotional fluctuations and a need for self-reflection.",
-      "travel": "The planetary positions do not suggest any significant travel plans, but the presence of Rahu in the 10th house may indicate a need for exploration and expansion in your career or personal life.",
-      "lucky_number": 43,
-      "lucky_color": "Green"
-    },
-    "Mithuna (Gemini)": {
-      "general": "With the Sun in the 1st house, you're experiencing a surge of energy and confidence, but the Moon in the 4th house suggests a need to balance this with emotional stability. Mars in the 12th house indicates a possible tendency to withdraw or become isolated. Mercury, Jupiter, and Venus in the 2nd house point to a focus on finances, values, and relationships.",
-      "luck": "Your luck is mixed, with opportunities arising from your relationships and financial situation, but potential challenges related to emotional stability and isolation.",
-      "scope": "This is a period of focusing on your personal growth, finances, and relationships, with opportunities for expansion and development.",
-      "study": "With Mercury and Jupiter in the 2nd house, you're well-suited for studying or working on projects related to finance, values, and relationships. However, the Moon in the 4th house suggests a need for emotional balance and stability.",
-      "love": "Romantic relationships may be a focus, with Venus in the 2nd house indicating a strong connection to your partner's values and financial stability. However, Mars in the 12th house suggests a potential for isolation or withdrawal.",
-      "travel": "Travel may not be a priority, with Mars in the 12th house indicating a tendency to stay close to home. However, the 9th house is not strongly activated, so this is not a major area of focus.",
-      "lucky_number": 43,
+    "Tula (Libra)": {
+      "general": "Expect a transformative period in your personal and professional life, marked by a focus on growth, exploration, and learning. Your natural charisma and diplomacy skills will be in high demand, but be cautious of overcommitting and maintaining balance. Opportunities for expansion and networking will arise, but be mindful of your emotional well-being.",
+      "luck": "Your luck is influenced by the planetary positions, suggesting a mixed bag of opportunities and challenges. With Mars in a relatively weak position, you may face minor setbacks, but Jupiter and Venus in the 10th house indicate positive developments and recognition in your professional life. Be prepared to seize opportunities and adapt to changing circumstances.",
+      "scope": "The current planetary transits indicate a broader focus on your career, public image, and long-term goals. Expect a surge in opportunities for growth, recognition, and expansion, but also be aware of the need for balance and caution in your personal life. This is a time for taking calculated risks and exploring new horizons.",
+      "study": "The transit of Jupiter and Venus in the 10th house indicates a favorable period for learning, self-improvement, and career advancement. Focus on developing your communication skills, networking, and building relationships that can help you achieve your goals. Be open to new ideas and perspectives, and don't be afraid to take calculated risks in your pursuit of knowledge and success.",
+      "love": "The current planetary transits suggest a focus on relationships and partnerships, with a emphasis on mutual growth, understanding, and compromise. With the Moon in the 12th house, be aware of the need for emotional intimacy and connection in your relationships. Be patient, understanding, and communicative, and you will attract positive and supportive partners.",
+      "travel": "The transit of Rahu in the 5th house indicates a possible focus on travel, adventure, and exploration. Expect opportunities for short trips, exploratory excursions, or even a change of scenery. Be prepared for unexpected twists and turns, and use your intuition and adaptability to navigate any challenges that may arise.",
+      "lucky_number": 64,
       "lucky_color": "Turquoise"
     },
-    "Karka (Cancer)": {
-      "general": "You may feel a mix of emotions today as the Moon in Virgo influences your emotional response to external stimuli. Your mood could shift frequently, making it essential to stay grounded. This is a good opportunity to practice self-care and prioritize your emotional well-being.",
-      "luck": "The current planetary transits suggest that you may experience a sense of good fortune in the coming days. With the Sun in Gemini, you may receive unexpected opportunities or news that brings you joy. However, it's crucial to remain vigilant and not get too caught up in excitement.",
-      "scope": "The present transit of Saturn in Pisces suggests that you may be working behind the scenes or focusing on a specific project. This could be a time for you to reflect on your goals and assess your progress. Remember to stay committed and patient, as the results may not be immediate.",
-      "study": "With Mercury in Cancer, your communication skills may be enhanced, making it an excellent time to learn new things or share your knowledge with others. Focus on developing your emotional intelligence and connecting with others on a deeper level.",
-      "love": "The current planetary transits indicate that you may be feeling a sense of emotional restlessness in your relationships. The Moon in Virgo can make you more critical or perfectionistic, which may affect your interactions with loved ones. Try to find a balance between your expectations and the reality of the situation.",
-      "travel": "The transit of Mars in Taurus suggests that you may be feeling a sense of stability and security, which could be beneficial for travel or exploring new places. However, it's essential to be mindful of your emotional state and not let it dictate your decisions.",
-      "lucky_number": 67,
+    "Vrishchika (Scorpio)": {
+      "general": "Your emotional and mental well-being will be influenced by the current lunar cycle, causing you to be more introspective and possibly experiencing mood swings. Focus on your personal growth and emotional stability during this period. This is a good time to re-evaluate your relationships and prioritize self-care.",
+      "luck": "Your luck is tied to your professional and financial aspects, as Mars is in the 7th house, indicating potential conflicts or power struggles in your relationships. However, Jupiter's presence in the 9th house suggests opportunities for growth and expansion in your career. Be cautious and strategic in your approach to avoid any setbacks.",
+      "scope": "The current transits suggest that your focus should be on your personal growth, emotional stability, and professional development. This is a good time to set new goals and work towards achieving them. Be prepared to face challenges and conflicts, but also be open to new opportunities and experiences.",
+      "study": "Your mental clarity and focus will be influenced by Mercury's presence in the 9th house, making it an ideal time for learning, studying, and intellectual pursuits. The presence of Jupiter and Venus in the 9th house also suggests a positive and expansive environment for education and personal growth. Take advantage of this opportunity to expand your knowledge and skills.",
+      "love": "Your relationships will be influenced by Mars' presence in the 7th house, indicating potential conflicts or power struggles. However, the presence of Jupiter and Venus in the 9th house suggests a positive and expansive environment for love and relationships. Focus on communication, empathy, and understanding to navigate any challenges that may arise.",
+      "travel": "Your travel plans may be influenced by the current transits, particularly with Saturn's presence in the 5th house. This could indicate a delay or a challenge in your travel plans. However, Jupiter's presence in the 9th house suggests opportunities for growth and expansion, which could manifest in new and exciting travel experiences. Be prepared for any unexpected twists and turns.",
+      "lucky_number": 63,
       "lucky_color": "Turquoise"
     }
   }
